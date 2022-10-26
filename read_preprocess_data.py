@@ -1,11 +1,12 @@
 #%%
 import pandas as pd
 from pathlib import Path
-import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 
 from ET.estimate_daily_et import compute_ET
+import ET.evapotranspiration_fao as et
+
 # %% read dipwell data
 def _read_dipwell_csv(csv_path:Path)->pd.DataFrame:
     df = pd.read_csv(csv_path, sep=";")
@@ -70,6 +71,8 @@ def fill_weather_nan_with_zeros(df: pd.DataFrame)->pd.DataFrame:
 
 def compute_ET_df(julian_days, Tmax_data, Tmean_data, Tmin_data, rel_humidity_data, windspeed_data):
     patrol_post_names = ['KM 33', 'KM 14', 'RK']
+    elevation_above_sea_level = 5 # metres
+    air_pressure = et.pressure_from_altitude(elevation_above_sea_level) # Computes air pressure in the station given sea level air pressure
     ET_df = pd.DataFrame(index=range(0,365), columns=[patrol_post_names])
     for i in range(0,365):
         for pname in patrol_post_names:
@@ -78,6 +81,7 @@ def compute_ET_df(julian_days, Tmax_data, Tmean_data, Tmin_data, rel_humidity_da
                                                 Tmean_data.iloc[i][pname],
                                                 Tmin_data.iloc[i][pname],
                                                 rel_humidity_data.iloc[i][pname],
+                                                air_pressure,
                                                 windspeed_data.iloc[i][pname])
     ET_df.columns = ET_df.columns.get_level_values(0) # Fix weird MultiIndex column thing
     return ET_df
@@ -95,12 +99,12 @@ def get_precip_and_ET(parent_folder):
 
     # Fill Nan with mean
     precipitation_data = fill_weather_nan_with_zeros(precipitation_data)
-    Tmean_data = fill_weather_nan_with_zeros(Tmean_data)
-    Tmin_data = fill_weather_nan_with_zeros(Tmin_data)
-    Tmax_data = fill_weather_nan_with_zeros(Tmax_data)
-    rel_humidity_data = fill_weather_nan_with_zeros(rel_humidity_data)
-    windspeed_data = fill_weather_nan_with_zeros(windspeed_data)
-    pressure_data = fill_weather_nan_with_zeros(pressure_data)
+    Tmean_data = fill_weather_nan_with_mean(Tmean_data)
+    Tmin_data = fill_weather_nan_with_mean(Tmin_data)
+    Tmax_data = fill_weather_nan_with_mean(Tmax_data)
+    rel_humidity_data = fill_weather_nan_with_mean(rel_humidity_data)
+    windspeed_data = fill_weather_nan_with_mean(windspeed_data)
+    pressure_data = fill_weather_nan_with_mean(pressure_data)
 
     julian_days = (171 + np.arange(0, 365))%365 # 171 is 20th of June, first day of computation
 

@@ -104,6 +104,11 @@ def pressure_from_altitude(ASL):
     Pamb = 101.3 * np.exp(-(ASL/8200.0))
     return Pamb
 
+def compute_vapour_pressure_from_relative_humidity(Tave, RH):
+    # vapour pressure from relative humidity:
+    es, _ =  saturation_vapor_pressure(Tave)
+    return (1 - RH / 100.0) * es
+
 
 # -- Functions related to saturation vapor pressure and phase changes of H2O
 

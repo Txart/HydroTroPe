@@ -10,7 +10,7 @@ import rasterio
 from pathlib import Path
 import pickle
 
-import cwl_preprocess_data
+from . import cwl_preprocess_data
 
 
 # %% STEP 1. Produce canal network of right global direction

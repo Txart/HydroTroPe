@@ -48,19 +48,14 @@ Tmin = 25.0 # degC, April, Borneo
 Tmax = 30 # degC
 Tave = 27.0
 U = 2.2 # Winspeed at 2m [ms-1]
-# ea = 2.85 # vapor pressure at 2m [kPa]
-# vapour pressure from relative humidity:
-RH = 79.0 # %
-es, _ =  et.saturation_vapor_pressure(Tave)
-ea = (1 - RH / 100.0) * es
 
 # Params
-Kc = 0.9 # [-] crop coefficient, Kc = ETa / ETo
-KRS = 0.19
+Kc = 0.8 # [-] crop coefficient, Kc = ETa / ETo
+KRS = 0.16
 
 air_pressure = et.pressure_from_altitude(elev) # Computes air pressure in the station given sea level air pressure
 
-def compute_ET(jday, Tmax, Tave, Tmin, RH, U, print_res=False):
+def compute_ET(jday, Tmax, Tave, Tmin, RH, U, air_pressure, print_res=False):
     """
     Main function to return ET
 
@@ -73,6 +68,14 @@ def compute_ET(jday, Tmax, Tave, Tmin, RH, U, print_res=False):
 
     Returns
     -------
+    Tmax, Tave, Tmin : float
+        Max, mean and min temperatures in C
+    RH  : float
+        Relative Humidity in %
+    U   : float
+        Windspeed in m/s 
+    air_pressure : float
+        Air pressure in KPa
     ETa : float
         ETa = Kc x ETo, where Kc is crop coefficient (or fraction of ETo that is realized)
     ETo : float
@@ -85,6 +88,10 @@ def compute_ET(jday, Tmax, Tave, Tmin, RH, U, print_res=False):
         Daily net longwave radiation
 
     """
+    
+
+    ea = et.compute_vapour_pressure_from_relative_humidity(Tave, RH)
+
     """
      1) net radiation balance [MJ m-2 d-1]
     """
