@@ -1,12 +1,11 @@
 class PeatlandHydroParameters:
-    def __init__(self, dt, dx, nx, ny,
+    def __init__(self,
+                 dt, dx,
                  max_sweeps, fipy_desired_residual,
                  s1, s2, t1, t2,
                  use_several_weather_stations) -> None:
         self.dt = dt
         self.dx = dx
-        self.nx = nx
-        self.ny = ny
         self.max_sweeps = max_sweeps
         self.fipy_desired_residual = fipy_desired_residual
 

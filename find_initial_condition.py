@@ -1,4 +1,6 @@
+
 # %%
+from classes.parameterizations import ExponentialBelowOneAboveStorageExpoTrans
 from classes.peatland_hydrology import PeatlandHydroParameters, set_up_peatland_hydrology
 from classes.peatland import Peatland
 from classes.channel_hydrology import set_up_channel_hydrology, CWLHydroParameters
@@ -16,43 +18,22 @@ import copy
 import networkx as nx
 from pathlib import Path
 import numpy as np
+import geopandas as gpd
+import os
 
 import hydro_masters # contains the main hydro functions at the highest level of abstraction
+import read_preprocess_data
 
-import os
 # necessary to set the same solver also in csc
 os.environ["FIPY_SOLVERS"] = "scipy"
 
 
-# %% Parse cmd line arguments
-
-# parser = argparse.ArgumentParser(description='Run 2d calibration')
-
-# parser.add_argument('--yes-blocks', help='Use status quo blocks. This is the default behaviour.',
-#                     dest='blockOpt', action='store_true')
-# parser.add_argument('--no-blocks', help='Do not use any block',
-#                     dest='blockOpt', action='store_false')
-
-# parser.add_argument('--ncpu', required=True,
-#                     help='(int) Number of processors', type=int)
-
-# args = parser.parse_args()
-
-# parser.set_defaults(blockOpt=True)
-# blockOpt = args.blockOpt
-# N_CPU = args.ncpu
-
-# TODO: Remove in the future
 blockOpt = False
 N_CPU = 1
 
 parent_directory = Path(r"C:\Users\03125327\github\fc_hydro_kalimantan_2022")
 data_parent_folder = Path(r"C:\Users\03125327\Dropbox\PhD\Computation\ForestCarbon\2022 Kalimantan customer work\0. Raw Data")
 fn_pointers = parent_directory.joinpath(r'file_pointers.xlsx')
-
-if N_CPU != 1:
-    raise ValueError(
-        'Multiprocessing not impletmeented in Windows. n_cpus in must be equal to 1')
 
 # %% Prepare data
 filenames_df = pd.read_excel(fn_pointers, header=2, dtype=str, engine='openpyxl')
@@ -116,7 +97,110 @@ hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content
                                   parameterization=parameterization,
                                   channel_network=channel_network, cwl_params=cwl_params)
 
+# %% Function
+def find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, parent_directory, output_folder_path):
+    hydro.ph_params.s1 = float(PARAMS[PARAMS.number == param_number].s1)
+    hydro.ph_params.s2 = float(PARAMS[PARAMS.number == param_number].s2)
+    hydro.ph_params.t1 = float(PARAMS[PARAMS.number == param_number].t1)
+    hydro.ph_params.t2 = float(PARAMS[PARAMS.number == param_number].t2)
+    cwl_hydro.cwl_params.porous_threshold_below_dem = float(PARAMS[PARAMS.number == param_number].porous_threshold)
+    cwl_hydro.cwl_params.n1 = float(PARAMS[PARAMS.number == param_number].n1)
+    cwl_hydro.cwl_params.n2 = float(PARAMS[PARAMS.number == param_number].n2)
 
+    hydro.parameterization = ExponentialBelowOneAboveStorageExpoTrans(hydro.ph_params)
+    
+    # Begin from complete saturation
+    hydro.zeta = hydro.create_uniform_fipy_var(
+        uniform_value=-0.0, var_name='zeta')
+
+    # Initialize returned variable
+    best_initial_zeta = hydro.zeta.value
+    best_fitness = np.inf
+
+    # Read day 0 sensor coords and values
+    # The pickle file was produced elsewhere, probably in scratch.py
+    fn_sensor_pickle = parent_directory.joinpath("initial_sensor_pickle.p")
+    sensor_coords, sensor_measurements = pickle.load(
+        open(fn_sensor_pickle, 'rb'))
+
+    # Get mesh cell center posiitions to compare to sensor values
+    mesh_cell_centers = hydro.mesh.cellCenters.value.T
+
+    # m/day. SOmething like 2,5x the daily ET to speed things up.
+    MEAN_P_MINUS_ET = -0.0075
+    hydro.ph_params.use_several_weather_stations = False
+    hydro.set_sourcesink_variable(value=MEAN_P_MINUS_ET)
+
+    N_DAYS = 0
+    day = 0
+    # If True, start day0 with a small timestep to smooth things
+    needs_smaller_timestep = True
+    NORMAL_TIMESTEP = 24  # Hourly
+    SMALLER_TIMESTEP = 100
+    while day < N_DAYS:
+        # Variables from current timestep for flexible solve
+        hydro_old = copy.deepcopy(hydro)
+        cwl_hydro_old = copy.deepcopy(cwl_hydro)
+        if not needs_smaller_timestep:
+            internal_timesteps = NORMAL_TIMESTEP
+        elif needs_smaller_timestep:
+            internal_timesteps = SMALLER_TIMESTEP
+
+        hydro.ph_params.dt = 1/internal_timesteps  # dt in days
+        hydro.cn_params.dt = 86400/internal_timesteps  # dt in seconds
+        # Add pan ET
+        # we need to insert this here, otherwise the panET is added every day.
+        hydro.set_sourcesink_variable(value=MEAN_P_MINUS_ET)
+        hydro.sourcesink = hydro.sourcesink - \
+            hydro.compute_pan_ET_from_ponding_water(hydro.zeta)
+
+        try:
+            solution_function = simulate_one_timestep_simple_two_step
+
+            for i in tqdm(range(internal_timesteps)):  # internal timestep
+                hydro, cwl_hydro = solution_function(hydro, cwl_hydro)
+
+        except Exception as e:
+            if internal_timesteps == NORMAL_TIMESTEP:
+                print(f'Exception in INITIAL RASTER computation of param number {param_number} at day {day}: ', e,
+                      ' I will retry with a smaller timestep')
+                needs_smaller_timestep = True
+                hydro = hydro_old
+                cwl_hydro = cwl_hydro_old
+                continue
+
+            elif internal_timesteps == SMALLER_TIMESTEP:
+                print(
+                    f"Another exception caught in INITIAL RASTER computation with smaller timestep: {e}. ABORTING")
+                break
+
+        else:  # try was successful
+            # Compute fitness
+            dists = distance.cdist(sensor_coords, mesh_cell_centers)
+            mesh_number_corresponding_to_sensor_coords = np.argmin(
+                dists, axis=1)
+            zeta_values_at_sensor_locations = np.array(
+                [hydro.zeta.value[m] for m in mesh_number_corresponding_to_sensor_coords])
+            current_fitness = np.linalg.norm(
+                sensor_measurements - zeta_values_at_sensor_locations)
+
+            # If fitness is improved, update initial zeta. And pickle it for future use
+            is_fitness_improved = current_fitness < best_fitness
+            if is_fitness_improved:
+                print(
+                    f"zeta at day {day} is better than the previous best, with a fitness difference of {best_fitness - current_fitness} points")
+                best_initial_zeta = hydro.zeta.value
+                best_fitness = current_fitness
+
+                fn_pickle = output_folder_path.joinpath('best_initial_zeta.p')
+
+                pickle.dump(best_initial_zeta, open(fn_pickle, 'wb'))
+
+            # go to next day
+            day = day + 1
+            needs_smaller_timestep = False
+
+    return best_initial_zeta
 
 # %% Params
 hydro.ph_params.dt = 1/24  # dt in days
@@ -156,12 +240,12 @@ if platform.system() == 'Linux':
 # %% Run Windows
 if platform.system() == 'Windows':
     hydro.verbose = True
-    N_PARAMS = 1
-    param_numbers = [1]
-    arguments = [(initial_zeta, param_number, PARAMS, hydro, cwl_hydro, sourcesink_df,
-                  parent_directory) for param_number in param_numbers]
+    param_number = 3
+    output_folder_path = parent_directory.joinpath(r'initial_condition')
+    find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, parent_directory,
+                                output_folder_path)
 
-    for args in arguments:
-        hydro_masters.produce_family_of_rasters(*args)
+# %%
+
 
 # %%

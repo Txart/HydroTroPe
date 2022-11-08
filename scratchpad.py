@@ -26,5 +26,22 @@ WTD_data = read_preprocess_data.read_dipwell_data(parent_folder)
 first_rainfall_date = sourcesink_df.Date.min()
 WTD_data_from_June = WTD_data[WTD_data['Date'] >= first_rainfall_date].reset_index(drop=True)
 
+#%%
+dipwell_fn = Path(filenames_df[filenames_df.Content ==
+                'sensor_locations'].Path.values[0])
+dipwells = gpd.read_file(dipwell_fn)
+
+def extract_coords_from_geopandas_dataframe(gpd_dataframe:gpd.GeoDataFrame) -> np.ndarray:
+    # gpd_dataframe needs to have a column of simple geometries
+    # If MULTI geometries present, use something like gpd.explode()
+    x_coords = gpd_dataframe.geometry.x.to_numpy()
+    y_coords = gpd_dataframe.geometry.y.to_numpy()
+    return np.column_stack((x_coords, y_coords))
+
+
+WTD_data = read_preprocess_data.read_dipwell_data(data_parent_folder)
+
+dipwell_coords = extract_coords_from_geopandas_dataframe(dipwells)
+
 # %%
 

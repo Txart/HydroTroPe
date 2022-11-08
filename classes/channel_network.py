@@ -44,13 +44,13 @@ class ChannelNetwork:
 
         # transpose is needed because of difference with NetworkX
         # canal network adjacency matrix
-        self.cnm = nx.adjacency_matrix(graph).T
-        self.n_nodes = len(graph.nodes)
+        self.cnm = nx.adjacency_matrix(self.graph).T
+        self.n_nodes = len(self.graph.nodes)
 
         # In order to translate labels in the graph to positions in the arrays,
         # nodelist keeps track of position array <--> node label in graph
         # Also worth mentioning: graph.nodes is the default unpacking order used by networkx
-        self.nodelist = list(graph.nodes)
+        self.nodelist = list(self.graph.nodes)
         # With this setup, the switch between array coords and graph labels works as follows:
         # 1) graph values -> array: use the method from_graph_attribute_to_nparray()
         # 2) node dictionary -> array: use from_nodedict_to_nparray()

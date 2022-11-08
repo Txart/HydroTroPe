@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import networkx as nx
 import rasterio
 from rasterio import fill
@@ -11,6 +12,7 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 from scipy.spatial import distance
 from scipy.interpolate import interp1d
+from pathlib import Path
 
 import cwl_utilities
 import utilities
@@ -67,6 +69,9 @@ class AbstractPeatlandHydro:
         self.force_ponding_storage_equal_one = force_ponding_storage_equal_one
 
         self._check_model_coupling_choice()
+
+        self.nx = self.pl.dem.shape[0]
+        self.ny = self.pl.dem.shape[1]
 
         # Defined by subclasses
         self.sourcesink = None
@@ -308,6 +313,7 @@ class GmshMeshHydro(AbstractPeatlandHydro):
                          model_coupling=model_coupling, use_scaled_pde=use_scaled_pde,
                          zeta_diri_bc=zeta_diri_bc,
                          force_ponding_storage_equal_one=force_ponding_storage_equal_one)
+
 
         self.mesh = fp.Gmsh2D(mesh_fn)
 
@@ -676,7 +682,7 @@ class RectangularMeshHydro(AbstractPeatlandHydro):
         super().__init__(peatland, peat_hydro_params, parameterization,
                          channel_network, cwl_params, model_coupling=model_coupling)
         self.mesh = fp.Grid2D(dx=self.ph_params.dx, dy=self.ph_params.dx,
-                              nx=self.ph_params.nx, ny=self.ph_params.ny)
+                              nx=self.nx, ny=self.ny)
 
         dem_value = self.pl.dem.flatten()
         # Avoid problems with hydro variables out of bounds
@@ -771,7 +777,7 @@ class RectangularMeshHydro(AbstractPeatlandHydro):
 
     def _reshape_fipy_var_to_array(self, fipy_var) -> np.ndarray:
         return fipy_var.value.reshape(
-            self.ph_params.nx, self.ph_params.ny)
+            self.nx, self.ny)
 
     def burn_fipy_variable_value_in_graph_attribute(self, fipy_var, graph_attr_name):
         fipy_var_value = self._reshape_fipy_var_to_array(fipy_var=fipy_var)
@@ -793,7 +799,7 @@ class RectangularMeshHydro(AbstractPeatlandHydro):
                 'Nothing to interpolate in a 2D rectabgular mesh. \nContinuing without interpolation')
         template_raster_fn = self.pl.fn_dem
         array_to_rasterize = fipy_var.value.reshape(
-            self.ph_params.nx, self.ph_params.ny)
+            self.nx, self.ny)
         utilities.write_raster_from_array(array_to_rasterize=array_to_rasterize,
                                           out_filename=out_raster_fn,
                                           template_raster_filename=template_raster_fn)
@@ -803,7 +809,7 @@ class RectangularMeshHydro(AbstractPeatlandHydro):
     def imshow(self, variable):
         plt.figure(figsize=(18, 16), dpi=200)
         plt.imshow(variable.value.reshape(
-            self.ph_params.nx, self.ph_params.ny))
+            self.nx, self.ny))
         plt.colorbar()
 
         return None
