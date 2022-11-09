@@ -1,5 +1,7 @@
 #%% Imports
+import numpy as np
 import pandas as pd
+import geopandas as gpd
 from pathlib import Path
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -22,26 +24,54 @@ sourcesink_df.to_excel(fn_sourcesink, index=False)
 # Dipwell
 WTD_data = read_preprocess_data.read_dipwell_data(parent_folder)
 
-# %% Set same starting date in rainfall and dipwell
-first_rainfall_date = sourcesink_df.Date.min()
-WTD_data_from_June = WTD_data[WTD_data['Date'] >= first_rainfall_date].reset_index(drop=True)
 
-#%%
+# %% Set same starting date in rainfall and dipwell
+first_rainfall_date = p.Date.min()
+WTD_data_from_June = WTD_data[WTD_data['Date'] >= first_rainfall_date].reset_index(drop=True)
+# Save WTD data to file
+fn_june_dipwell_data = parent_directory.joinpath('data/dipwell_data_from_first_rainfall_record.csv')
+WTD_data_from_June.to_csv(fn_june_dipwell_data, index=False)
+
+#%% Plot data to choose initial condition
+# 3rd day (23rd of June) has a very big amount of data (only 20 records missing)
+# I choose this as initial condition
+plt.figure()
+plt.plot(WTD_data_from_June.isnull().sum(axis=1))
+
+#%% Initial day dipwell values and locations
 dipwell_fn = Path(filenames_df[filenames_df.Content ==
                 'sensor_locations'].Path.values[0])
-dipwells = gpd.read_file(dipwell_fn)
+ini_day = 3
+# Values
+ini_day_dipwell_WTD = WTD_data_from_June.drop('Date', axis='columns').loc[ini_day]
+ini_day_dipwell_names = list(WTD_data_from_June.loc[ini_day][WTD_data_from_June.loc[ini_day].notnull()].index)
+ini_day_dipwell_names.remove('Date')
+# Locations
+dipwell_fn = Path(filenames_df[filenames_df.Content == 'sensor_locations'].Path.values[0])
+dipwell_location = gpd.read_file(dipwell_fn)
+ini_day_dipwell_locations = dipwell_location[dipwell_location['Dipwell ID'].isin(ini_day_dipwell_names)]
 
-def extract_coords_from_geopandas_dataframe(gpd_dataframe:gpd.GeoDataFrame) -> np.ndarray:
-    # gpd_dataframe needs to have a column of simple geometries
-    # If MULTI geometries present, use something like gpd.explode()
-    x_coords = gpd_dataframe.geometry.x.to_numpy()
-    y_coords = gpd_dataframe.geometry.y.to_numpy()
-    return np.column_stack((x_coords, y_coords))
+# Joint  dataframe of locations and WTD measurements
+ini_day_dipwell_coords_and_WTD = pd.DataFrame(index=ini_day_dipwell_locations.index,
+                                              columns=['ID', 'x', 'y', 'WTD(m)'])
+for dipwell_name in ini_day_dipwell_names:
+    dipwell_index = ini_day_dipwell_locations[ini_day_dipwell_locations['Dipwell ID'] == dipwell_name].index.values[0]
+    dipwell_xcoord = ini_day_dipwell_locations[ini_day_dipwell_locations['Dipwell ID'] == dipwell_name].geometry.x.values[0]
+    dipwell_ycoord = ini_day_dipwell_locations[ini_day_dipwell_locations['Dipwell ID'] == dipwell_name].geometry.y.values[0]
+    dipwell_WTD_meters = ini_day_dipwell_WTD[dipwell_name]/100 # meters
+    ini_day_dipwell_coords_and_WTD.loc[dipwell_index, 'ID'] = dipwell_name
+    ini_day_dipwell_coords_and_WTD.loc[dipwell_index, 'x'] = dipwell_xcoord
+    ini_day_dipwell_coords_and_WTD.loc[dipwell_index, 'y'] = dipwell_ycoord
+    ini_day_dipwell_coords_and_WTD.loc[dipwell_index, 'WTD(m)'] = dipwell_WTD_meters
 
+# Write info to files
+fn_ini_day_dipwell_coords_and_WTD = parent_directory.joinpath('initial_condition/initial_day_dipwell_coords_and_measurements.csv')
+ini_day_dipwell_coords_and_WTD.to_csv(fn_ini_day_dipwell_coords_and_WTD, index=False)
 
-WTD_data = read_preprocess_data.read_dipwell_data(data_parent_folder)
+#%% Read  initial dipwell data and get coordinates and WTD measurements
+ini_dipwell_fn = Path(filenames_df[filenames_df.Content ==
+                'initial_dipwell_measurements'].Path.values[0])
+ini_dipwell_data = pd.read_csv(ini_dipwell_fn)
 
-dipwell_coords = extract_coords_from_geopandas_dataframe(dipwells)
-
-# %%
-
+ini_dipwell_coords = np.column_stack((ini_dipwell_data['x'].values,ini_dipwell_data['y'].values))
+ini_dipwell_WTD_meters = ini_dipwell_data['WTD(m)'].values
