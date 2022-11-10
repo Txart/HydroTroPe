@@ -329,7 +329,6 @@ class GmshMeshHydro(AbstractPeatlandHydro):
         self.avg_canal_area = mean_cell_centroid_distance * self.cn.B # assuming rectangular shape
         self.avg_cell_area = np.sqrt(3)/4 * mean_cell_centroid_distance**2 # approximating equilateral triangles
         
-        
         # Canal mask
         canal_mask_value = np.zeros(shape=mesh_centroids_coords.shape[0], dtype=int)
         canal_mask_value[canal_mesh_cell_indices] = True
@@ -637,6 +636,20 @@ class GmshMeshHydro(AbstractPeatlandHydro):
             zeta_canal_nodedict[node] = self.avg_canal_area[node]/self.avg_cell_area * zeta
             
         return zeta_canal_nodedict
+
+    
+    def sample_zeta_values_at_locations(self, coords:np.ndarray)->np.ndarray:
+        """
+        coords should be a list of coordinates: [[x1,y1], [x2, y2], ...].
+        The value of x1 and y1 should be x and y coords in the same CRS as the mesh, and not (lat, long) pairs.
+        """
+        mesh_cell_centers = self.mesh.cellCenters.value.T
+        dists = distance.cdist(coords, mesh_cell_centers)
+        mesh_number_corresponding_to_coords = np.argmin(dists, axis=1)
+        zeta_values_at_coords = np.array(
+            [self.zeta.value[m] for m in mesh_number_corresponding_to_coords])
+
+        return zeta_values_at_coords
     
 
     def save_fipy_var_in_raster_file(self, fipy_var, out_raster_fn, interpolation:str):

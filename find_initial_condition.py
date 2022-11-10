@@ -1,4 +1,3 @@
-
 # %%
 from classes.parameterizations import ExponentialBelowOneAboveStorageExpoTrans
 from classes.peatland_hydrology import PeatlandHydroParameters, set_up_peatland_hydrology
@@ -20,6 +19,7 @@ from pathlib import Path
 import numpy as np
 import geopandas as gpd
 import os
+from tqdm import tqdm
 
 import hydro_masters # contains the main hydro functions at the highest level of abstraction
 import read_preprocess_data
@@ -98,7 +98,7 @@ hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content
                                   channel_network=channel_network, cwl_params=cwl_params)
 
 # %% Function
-def find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, parent_directory, output_folder_path):
+def find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, sensor_coords, sensor_measurements, output_folder_path):
     hydro.ph_params.s1 = float(PARAMS[PARAMS.number == param_number].s1)
     hydro.ph_params.s2 = float(PARAMS[PARAMS.number == param_number].s2)
     hydro.ph_params.t1 = float(PARAMS[PARAMS.number == param_number].t1)
@@ -117,26 +117,17 @@ def find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, parent_d
     best_initial_zeta = hydro.zeta.value
     best_fitness = np.inf
 
-    # Read day 0 sensor coords and values
-    # The pickle file was produced elsewhere, probably in scratch.py
-    fn_sensor_pickle = parent_directory.joinpath("initial_sensor_pickle.p")
-    sensor_coords, sensor_measurements = pickle.load(
-        open(fn_sensor_pickle, 'rb'))
-
-    # Get mesh cell center posiitions to compare to sensor values
-    mesh_cell_centers = hydro.mesh.cellCenters.value.T
-
     # m/day. SOmething like 2,5x the daily ET to speed things up.
     MEAN_P_MINUS_ET = -0.0075
     hydro.ph_params.use_several_weather_stations = False
     hydro.set_sourcesink_variable(value=MEAN_P_MINUS_ET)
 
-    N_DAYS = 0
+    N_DAYS = 2
     day = 0
     # If True, start day0 with a small timestep to smooth things
     needs_smaller_timestep = True
     NORMAL_TIMESTEP = 24  # Hourly
-    SMALLER_TIMESTEP = 100
+    SMALLER_TIMESTEP = 24
     while day < N_DAYS:
         # Variables from current timestep for flexible solve
         hydro_old = copy.deepcopy(hydro)
@@ -155,7 +146,7 @@ def find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, parent_d
             hydro.compute_pan_ET_from_ponding_water(hydro.zeta)
 
         try:
-            solution_function = simulate_one_timestep_simple_two_step
+            solution_function = hydro_masters.simulate_one_timestep_simple_two_step
 
             for i in tqdm(range(internal_timesteps)):  # internal timestep
                 hydro, cwl_hydro = solution_function(hydro, cwl_hydro)
@@ -176,11 +167,7 @@ def find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, parent_d
 
         else:  # try was successful
             # Compute fitness
-            dists = distance.cdist(sensor_coords, mesh_cell_centers)
-            mesh_number_corresponding_to_sensor_coords = np.argmin(
-                dists, axis=1)
-            zeta_values_at_sensor_locations = np.array(
-                [hydro.zeta.value[m] for m in mesh_number_corresponding_to_sensor_coords])
+            zeta_values_at_sensor_locations = hydro.sample_zeta_values_at_locations(coords=sensor_coords)
             current_fitness = np.linalg.norm(
                 sensor_measurements - zeta_values_at_sensor_locations)
 
@@ -211,41 +198,27 @@ params_fn = Path.joinpath(parent_directory, '2d_calibration_parameters.xlsx')
 PARAMS = pd.read_excel(params_fn, engine='openpyxl')
 N_PARAMS = N_CPU
 
-#%% Initial WTD
-# Read from pickle
-initial_zeta_pickle_fn = Path(
-    filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
-initial_zeta = pickle.load(
-    open(initial_zeta_pickle_fn, 'rb'))
+#%% Initial condition sensor measurements and locations
+ini_dipwell_fn = Path(filenames_df[filenames_df.Content ==
+                'initial_dipwell_measurements'].Path.values[0])
+ini_dipwell_data = pd.read_csv(ini_dipwell_fn)
 
-# %% Run multiprocessing csc
-if platform.system() == 'Linux':
-    if N_PARAMS > 1:
-        hydro.verbose = True
-        param_numbers = range(0, N_PARAMS)
-        multiprocessing_arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
-                                      parent_directory) for param_number in param_numbers]
-        with mp.Pool(processes=N_CPU) as pool:
-            pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
+ini_dipwell_coords = np.column_stack((ini_dipwell_data['x'].values,ini_dipwell_data['y'].values))
+ini_dipwell_WTD_meters = ini_dipwell_data['WTD(m)'].values
 
-    elif N_PARAMS == 1:
-        hydro.verbose = True
-        param_numbers = range(0, N_PARAMS)
-        arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
-                      parent_directory) for param_number in param_numbers]
-        for args in arguments:
-            produce_family_of_rasters(*args)
-
+if ini_dipwell_coords.shape[0] != len(ini_dipwell_WTD_meters):
+    raise ValueError('Different number of dipwell locations and WTD measurements. ABORTING')
 
 # %% Run Windows
 if platform.system() == 'Windows':
     hydro.verbose = True
     param_number = 3
     output_folder_path = parent_directory.joinpath(r'initial_condition')
-    find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, parent_directory,
-                                output_folder_path)
+    find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro,
+                                sensor_coords=ini_dipwell_coords,
+                                sensor_measurements=ini_dipwell_WTD_meters,
+                                output_folder_path=parent_directory.joinpath('initial_condition'))
 
-# %%
 
 
 # %%
