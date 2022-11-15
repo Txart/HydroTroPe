@@ -117,7 +117,7 @@ def run_daily_computations(hydro, cwl_hydro, net_daily_source, internal_timestep
     return hydro, cwl_hydro
 
 
-def write_output_zeta_raster(zeta, full_folder_path, day):
+def write_output_zeta_raster(zeta, hydro, full_folder_path, day):
     out_raster_fn = Path.joinpath(
         full_folder_path, f"zeta_after_{day}_DAYS.tif")
     hydro.save_fipy_var_in_raster_file(
@@ -201,7 +201,7 @@ def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
             print(f' writing output raster to {full_write_foldername}')
 
             write_output_zeta_raster(
-                hydro.zeta, full_write_foldername, day)
+                hydro.zeta, hydro, full_write_foldername, day)
 
             continue
     return 0
