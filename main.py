@@ -133,9 +133,6 @@ N_PARAMS = N_CPU
 initial_zeta_pickle_fn = Path(
     filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
 initial_zeta = pickle.load(open(initial_zeta_pickle_fn, 'rb'))
-# Set initial zeta
-hydro.zeta = fp.CellVariable(
-    name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
 
 # %% Run multiprocessing csc
 # if platform.system() == 'Linux':
@@ -165,6 +162,10 @@ if platform.system() == 'Windows':
     NDAYS = 96
 
     for param_number in param_numbers:
+        # Set initial zeta
+        hydro.zeta = fp.CellVariable(
+            name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
+
         hydro_masters.set_hydrological_params(hydro, cwl_hydro, PARAMS, param_number)
 
         hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
