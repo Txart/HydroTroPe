@@ -68,10 +68,3 @@ for dipwell_name in ini_day_dipwell_names:
 fn_ini_day_dipwell_coords_and_WTD = parent_directory.joinpath('initial_condition/initial_day_dipwell_coords_and_measurements.csv')
 ini_day_dipwell_coords_and_WTD.to_csv(fn_ini_day_dipwell_coords_and_WTD, index=False)
 
-#%% Read  initial dipwell data and get coordinates and WTD measurements
-ini_dipwell_fn = Path(filenames_df[filenames_df.Content ==
-                'initial_dipwell_measurements'].Path.values[0])
-ini_dipwell_data = pd.read_csv(ini_dipwell_fn)
-
-ini_dipwell_coords = np.column_stack((ini_dipwell_data['x'].values,ini_dipwell_data['y'].values))
-ini_dipwell_WTD_meters = ini_dipwell_data['WTD(m)'].values

@@ -1,4 +1,5 @@
 # %%
+from classes.parameterizations import ExponentialBelowOneAboveStorageExpoTrans
 from classes.peatland_hydrology import PeatlandHydroParameters, set_up_peatland_hydrology
 from classes.peatland import Peatland
 from classes.channel_hydrology import set_up_channel_hydrology, CWLHydroParameters
@@ -131,37 +132,42 @@ N_PARAMS = N_CPU
 # Read from pickle
 initial_zeta_pickle_fn = Path(
     filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
-initial_zeta = pickle.load(
-    open(initial_zeta_pickle_fn, 'rb'))
+initial_zeta = pickle.load(open(initial_zeta_pickle_fn, 'rb'))
+# Set initial zeta
+hydro.zeta = fp.CellVariable(
+    name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
 
 # %% Run multiprocessing csc
-if platform.system() == 'Linux':
-    if N_PARAMS > 1:
-        hydro.verbose = True
-        param_numbers = range(0, N_PARAMS)
-        multiprocessing_arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
-                                      parent_directory) for param_number in param_numbers]
-        with mp.Pool(processes=N_CPU) as pool:
-            pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
+# if platform.system() == 'Linux':
+#     if N_PARAMS > 1:
+#         hydro.verbose = True
+#         param_numbers = range(0, N_PARAMS)
+#         multiprocessing_arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
+#                                       parent_directory) for param_number in param_numbers]
+#         with mp.Pool(processes=N_CPU) as pool:
+#             pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
 
-    elif N_PARAMS == 1:
-        hydro.verbose = True
-        param_numbers = range(0, N_PARAMS)
-        arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
-                      parent_directory) for param_number in param_numbers]
-        for args in arguments:
-            produce_family_of_rasters(*args)
+#     elif N_PARAMS == 1:
+#         hydro.verbose = True
+#         param_numbers = range(0, N_PARAMS)
+#         arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
+#                       parent_directory) for param_number in param_numbers]
+#         for args in arguments:
+#             produce_family_of_rasters(*args)
 
 
 # %% Run Windows
 if platform.system() == 'Windows':
     hydro.verbose = True
     N_PARAMS = 1
-    param_numbers = [1]
-    arguments = [(initial_zeta, param_number, PARAMS, hydro, cwl_hydro, sourcesink_df,
-                  parent_directory) for param_number in param_numbers]
+    param_numbers = [1, 2, 3, 4, 5, 6, 7, 8]
 
-    for args in arguments:
-        hydro_masters.produce_family_of_rasters(*args)
+    NDAYS = 96
+
+    for param_number in param_numbers:
+        hydro_masters.set_hydrological_params(hydro, cwl_hydro, PARAMS, param_number)
+
+        hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
+                  parent_directory)
 
 # %%

@@ -90,10 +90,6 @@ def simulate_one_timestep_simple_two_step(hydro, cwl_hydro):
 
     return hydro, cwl_hydro
 
-# %% Initial condition
-
-
-
 # %% main function
 
 def run_daily_computations(hydro, cwl_hydro, net_daily_source, internal_timesteps, day):
@@ -129,8 +125,7 @@ def write_output_zeta_raster(zeta, full_folder_path, day):
 
     return None
 
-
-def produce_family_of_rasters(initial_zeta, param_number, PARAMS, hydro, cwl_hydro, net_daily_source, parent_directory):
+def set_hydrological_params(hydro, cwl_hydro, PARAMS, param_number):
     hydro.ph_params.s1 = float(PARAMS[PARAMS.number == param_number].s1)
     hydro.ph_params.s2 = float(PARAMS[PARAMS.number == param_number].s2)
     hydro.ph_params.t1 = float(PARAMS[PARAMS.number == param_number].t1)
@@ -138,6 +133,12 @@ def produce_family_of_rasters(initial_zeta, param_number, PARAMS, hydro, cwl_hyd
     cwl_hydro.cwl_params.porous_threshold_below_dem = float(PARAMS[PARAMS.number == param_number].porous_threshold)
     cwl_hydro.cwl_params.n1 = float(PARAMS[PARAMS.number == param_number].n1)
     cwl_hydro.cwl_params.n2 = float(PARAMS[PARAMS.number == param_number].n2)
+    
+    return None
+
+
+def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
+                              net_daily_source, parent_directory):
 
     # hydro.parameterization = ExponentialBelowOneAboveStorage(
     #     hydro.ph_params)
@@ -148,11 +149,6 @@ def produce_family_of_rasters(initial_zeta, param_number, PARAMS, hydro, cwl_hyd
     out_rasters_folder_name = f"params_number_{param_number}"
     full_folder_path = Path.joinpath(output_directory, out_rasters_folder_name)
 
-    # Set initial zeta
-    hydro.zeta = fp.CellVariable(
-        name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
-
-    N_DAYS = 3
     day = 0
     needs_smaller_timestep = False
     NORMAL_TIMESTEP = 24  # Hourly
