@@ -190,9 +190,9 @@ def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
             needs_smaller_timestep = False
 
             # write zeta to file
-            if channel_network.work_without_blocks:
+            if hydro.cn.work_without_blocks:
                 foldername = 'no_blocks'
-            elif not channel_network.work_without_blocks:
+            elif not hydro.cn.work_without_blocks:
                 foldername = 'yes_blocks'
 
             # if weather_stations, then the folder is yes_blocks by default
