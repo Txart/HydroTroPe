@@ -67,4 +67,3 @@ for dipwell_name in ini_day_dipwell_names:
 # Write info to files
 fn_ini_day_dipwell_coords_and_WTD = parent_directory.joinpath('initial_condition/initial_day_dipwell_coords_and_measurements.csv')
 ini_day_dipwell_coords_and_WTD.to_csv(fn_ini_day_dipwell_coords_and_WTD, index=False)
-
