@@ -54,7 +54,7 @@ sourcesink_df = pd.read_excel(fn_sourcesink)
 
 channel_network = ChannelNetwork(
     graph=graph, block_height_from_surface=0.0, block_coeff_k=2000.0,
-    y_ini_below_DEM=-0.0, Q_ini_value=0.0, channel_bottom_below_DEM=8.0,
+    y_ini_below_DEM=1.0, Q_ini_value=0.0, channel_bottom_below_DEM=8.0,
     y_BC_below_DEM=-0.5, Q_BC=0.0, channel_width=3.5, work_without_blocks=not blockOpt)
 
 peatland = Peatland(cn=channel_network, fn_pointers=fn_pointers)
@@ -98,7 +98,7 @@ hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content
                                   channel_network=channel_network, cwl_params=cwl_params)
 
 # %% Function
-def find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, sensor_coords, sensor_measurements, output_folder_path):
+def find_best_initial_condition(initial_zeta_value, param_number, PARAMS, hydro, cwl_hydro, sensor_coords, sensor_measurements, output_folder_path):
     hydro.ph_params.s1 = float(PARAMS[PARAMS.number == param_number].s1)
     hydro.ph_params.s2 = float(PARAMS[PARAMS.number == param_number].s2)
     hydro.ph_params.t1 = float(PARAMS[PARAMS.number == param_number].t1)
@@ -109,9 +109,8 @@ def find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro, sensor_c
 
     hydro.parameterization = ExponentialBelowOneAboveStorageExpoTrans(hydro.ph_params)
     
-    # Begin from complete saturation
     hydro.zeta = hydro.create_uniform_fipy_var(
-        uniform_value=-0.0, var_name='zeta')
+        uniform_value=initial_zeta_value, var_name='zeta')
 
     # Initialize returned variable
     best_initial_zeta = hydro.zeta.value
@@ -213,8 +212,10 @@ if ini_dipwell_coords.shape[0] != len(ini_dipwell_WTD_meters):
 if platform.system() == 'Windows':
     hydro.verbose = True
     param_number = 3
+    initial_zeta_value = 1.0 # Meters. Negative means below the surface. Zero means complete saturation everywhere. 
     output_folder_path = parent_directory.joinpath(r'initial_condition')
-    find_best_initial_condition(param_number, PARAMS, hydro, cwl_hydro,
+    find_best_initial_condition(initial_zeta_value,
+                                param_number, PARAMS, hydro, cwl_hydro,
                                 sensor_coords=ini_dipwell_coords,
                                 sensor_measurements=ini_dipwell_WTD_meters,
                                 output_folder_path=parent_directory.joinpath('initial_condition'))

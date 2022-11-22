@@ -157,7 +157,7 @@ initial_zeta = pickle.load(open(initial_zeta_pickle_fn, 'rb'))
 if platform.system() == 'Windows':
     hydro.verbose = True
     N_PARAMS = 1
-    param_numbers = [1, 2, 3, 4, 5, 6, 7, 8]
+    param_numbers = [7, 8]
 
     NDAYS = 96
 

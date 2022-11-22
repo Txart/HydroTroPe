@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import geopandas as gpd
+import matplotlib.pyplot as plt
 
 
 #%% Funcs
@@ -66,7 +67,7 @@ if '__name__' == '__main__':
     filenames_df = pd.read_excel(fn_pointers, header=2, dtype=str, engine='openpyxl')
 
     NDAYS = 96 # Number of computed days
-    PARAMS = [1, 2, 3]
+    PARAMS = [1, 2, 3, 4, 5, 6, 7, 8]
 
     # Read measured WTD and dipwell locations
     dipwell_fn = Path(filenames_df[filenames_df.Content == 'dipwell_measurements'].Path.values[0])
@@ -74,16 +75,36 @@ if '__name__' == '__main__':
     dipwell_location_fn = Path(filenames_df[filenames_df.Content == 'sensor_locations'].Path.values[0])
     dipwell_info = gpd.read_file(dipwell_location_fn)
     dipwell_names, dipwell_locations = get_dipwell_names_and_locations(dipwell_info)
-
-    # Read modelled WTD
     dipwell_WTD_sorted = sort_dipwell_WTD_according_to_names(dipwell_names, dipwell_WTD) # shape: [day, WTD_meas]
+    dipwell_WTD_sorted_meters = dipwell_WTD_sorted * 0.01 # cm -> m
 
     # Compute mse for all params
     mse_per_param = []
     for param in PARAMS:
-        mse = mse_one_parameter_modelled_and_measured_WTD(n_param=param, measured_WTD=dipwell_WTD_sorted, dipwell_locations=dipwell_locations)
+        mse = mse_one_parameter_modelled_and_measured_WTD(n_param=param, measured_WTD=dipwell_WTD_sorted_meters, dipwell_locations=dipwell_locations)
         mse_per_param.append(mse)
 
+    print(f"CALIBRATION RESULT: the best parameter is param {np.argmin(mse_per_param) + 1}, with a MSE of {min(mse_per_param)}")
         
-# %%
+# %% Plots for visual identification
+
+def get_measured_WTD_at_dipwell_locations(n_param:int, dipwell_locations:np.ndarray) -> np.ndarray:
+    modelled_WTD_at_dipwells = np.zeros(shape=(NDAYS, len(dipwell_locations))) # Output var
+    modelled_WTD_filepaths = get_one_param_modelled_WTD_filepaths(n_param, n_days=NDAYS, is_blocked=False)
+    for day, fpath in enumerate(modelled_WTD_filepaths):
+        modelled_WTD_at_dipwells[day] = utilities.sample_raster_from_coords(raster_filename=fpath, coords=dipwell_locations)
+     
+    return modelled_WTD_at_dipwells
+
+
+#%% 
+for p in PARAMS:
+    modelled_WTD_at_dipwells = get_measured_WTD_at_dipwell_locations(n_param=p, dipwell_locations=dipwell_locations)
+    plt.figure()
+    plt.title(f'param {p} - Modelled vs Measured')
+    plt.plot(modelled_WTD_at_dipwells)
+    plt.plot(dipwell_WTD_sorted_meters, marker='.', color='gray', linestyle='None')
+    plt.xlabel('Time (days)')
+    plt.ylabel('WT (m)')
+
 # %%
