@@ -116,8 +116,8 @@ def find_best_initial_condition(initial_zeta_value, param_number, PARAMS, hydro,
     best_initial_zeta = hydro.zeta.value
     best_fitness = np.inf
 
-    # m/day. SOmething like 2,5x the daily ET to speed things up.
-    MEAN_P_MINUS_ET = -0.003
+    
+    MEAN_P_MINUS_ET = -0.003 # m/day. 
     hydro.ph_params.use_several_weather_stations = False
     hydro.set_sourcesink_variable(value=MEAN_P_MINUS_ET)
 
@@ -126,7 +126,7 @@ def find_best_initial_condition(initial_zeta_value, param_number, PARAMS, hydro,
     # If True, start day0 with a small timestep to smooth things
     needs_smaller_timestep = True
     NORMAL_TIMESTEP = 24  # Hourly
-    SMALLER_TIMESTEP = 24
+    SMALLER_TIMESTEP = 10000
     while day < N_DAYS:
         # Variables from current timestep for flexible solve
         hydro_old = copy.deepcopy(hydro)

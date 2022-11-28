@@ -24,6 +24,13 @@ sourcesink_df.to_excel(fn_sourcesink, index=False)
 # Dipwell
 WTD_data = read_preprocess_data.read_dipwell_data(parent_folder)
 
+#%% Plot dipwell data
+plt.figure()
+plt.title('Dipwell measured WTD')
+plt.plot(WTD_data.drop('Date', axis='columns'), marker='.')
+plt.hlines(y=0, xmin=0, xmax=len(WTD_data), colors='black', linestyles='dashed')
+plt.ylabel('WT (cm)')
+plt.xlabel('Time (days)')
 
 # %% Set same starting date in rainfall and dipwell
 first_rainfall_date = p.Date.min()
