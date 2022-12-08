@@ -24,6 +24,14 @@ sourcesink_df.to_excel(fn_sourcesink, index=False)
 # Dipwell
 WTD_data = read_preprocess_data.read_dipwell_data(parent_folder)
 
+#%% Remove dipwells close to canals and create file. Useful for calibration
+fn_dipwell_data = Path(filenames_df[filenames_df.Content == 'dipwell_measurements'].Path.values[0])
+dipwell_data = pd.read_csv(fn_dipwell_data)
+dipwell_names_close_to_canals = [name for name in dipwell_data.columns if ('-1'  in name  or '-2'  in name)]
+dip_data_no_canals = dipwell_data.drop(labels=dipwell_names_close_to_canals, axis='columns')
+OUTPUT_FN = parent_directory.joinpath('data/revised_dipwell_data_from_first_rainfall_record_without_canal_sensors.csv')
+dip_data_no_canals.to_csv(OUTPUT_FN, index=False)
+
 #%% Plot dipwell data
 plt.figure()
 plt.title('Dipwell measured WTD')

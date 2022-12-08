@@ -121,12 +121,12 @@ def find_best_initial_condition(initial_zeta_value, param_number, PARAMS, hydro,
     hydro.ph_params.use_several_weather_stations = False
     hydro.set_sourcesink_variable(value=MEAN_P_MINUS_ET)
 
-    N_DAYS = 100
+    N_DAYS = 50
     day = 0
     # If True, start day0 with a small timestep to smooth things
-    needs_smaller_timestep = True
+    needs_smaller_timestep = False
     NORMAL_TIMESTEP = 24  # Hourly
-    SMALLER_TIMESTEP = 10000
+    SMALLER_TIMESTEP = 1000
     while day < N_DAYS:
         # Variables from current timestep for flexible solve
         hydro_old = copy.deepcopy(hydro)
@@ -212,7 +212,7 @@ if ini_dipwell_coords.shape[0] != len(ini_dipwell_WTD_meters):
 if platform.system() == 'Windows':
     hydro.verbose = True
     param_number = 3
-    initial_zeta_value = 1.0 # Meters. Negative means below the surface. Zero means complete saturation everywhere. 
+    initial_zeta_value = 0.4 # Meters. Negative means below the surface. Zero means complete saturation everywhere. 
     output_folder_path = parent_directory.joinpath(r'initial_condition')
     find_best_initial_condition(initial_zeta_value,
                                 param_number, PARAMS, hydro, cwl_hydro,

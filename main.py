@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 
 import hydro_masters # contains the main hydro functions at the highest level of abstraction
+import utilities
 
 import os
 # necessary to set the same solver also in csc
@@ -27,25 +28,21 @@ os.environ["FIPY_SOLVERS"] = "scipy"
 
 # %% Parse cmd line arguments
 
-# parser = argparse.ArgumentParser(description='Run 2d calibration')
+parser = argparse.ArgumentParser(description='Run hydrology')
 
-# parser.add_argument('--yes-blocks', help='Use status quo blocks. This is the default behaviour.',
-#                     dest='blockOpt', action='store_true')
-# parser.add_argument('--no-blocks', help='Do not use any block',
-#                     dest='blockOpt', action='store_false')
+parser.add_argument('--yes-blocks', help='Use status quo blocks. This is the default behaviour.',
+                    dest='blockOpt', action='store_true')
+parser.add_argument('--no-blocks', help='Do not use any block',
+                    dest='blockOpt', action='store_false')
 
-# parser.add_argument('--ncpu', required=True,
-#                     help='(int) Number of processors', type=int)
+parser.add_argument('--ncpu', required=True,
+                    help='(int) Number of processors', type=int)
 
-# args = parser.parse_args()
+args = parser.parse_args()
 
-# parser.set_defaults(blockOpt=True)
-# blockOpt = args.blockOpt
-# N_CPU = args.ncpu
-
-# TODO: Remove in the future
-blockOpt = False
-N_CPU = 1
+parser.set_defaults(blockOpt=True)
+blockOpt = args.blockOpt
+N_CPU = args.ncpu
 
 parent_directory = Path(r"C:\Users\03125327\github\fc_hydro_kalimantan_2022")
 data_parent_folder = Path(r"C:\Users\03125327\Dropbox\PhD\Computation\ForestCarbon\2022 Kalimantan customer work\0. Raw Data")
@@ -122,6 +119,7 @@ hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content
 # %% Params
 hydro.ph_params.dt = 1/24  # dt in days
 hydro.cn_params.dt = 3600  # dt in seconds
+NDAYS = 364
 
 # Read params
 params_fn = Path.joinpath(parent_directory, '2d_calibration_parameters.xlsx')
@@ -130,36 +128,56 @@ N_PARAMS = N_CPU
 
 #%% Initial WTD
 # Read from pickle
-initial_zeta_pickle_fn = Path(
-    filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
-initial_zeta = pickle.load(open(initial_zeta_pickle_fn, 'rb'))
+initial_zeta_from_pickle = True
+if initial_zeta_from_pickle:
+    initial_zeta_pickle_fn = Path(
+        filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
+    initial_zeta = pickle.load(open(initial_zeta_pickle_fn, 'rb'))
+else:
+    initial_zeta_fn = r"C:\Users\03125327\github\fc_hydro_kalimantan_2022\output\params_number_1\no_blocks\first96days/zeta_after_96_DAYS.tif"
+    mesh_centroids_coords = np.column_stack(hydro.mesh.cellCenters.value)
+    initial_zeta = utilities.sample_raster_from_coords(
+            raster_filename=initial_zeta_fn,
+            coords=mesh_centroids_coords)
+    initial_zeta = np.nan_to_num(initial_zeta, -0.2) # if mesh larger than raster, fill with value
 
 # %% Run multiprocessing csc
-# if platform.system() == 'Linux':
-#     if N_PARAMS > 1:
-#         hydro.verbose = True
-#         param_numbers = range(0, N_PARAMS)
-#         multiprocessing_arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
-#                                       parent_directory) for param_number in param_numbers]
-#         with mp.Pool(processes=N_CPU) as pool:
-#             pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
+if platform.system() == 'Linux':
 
-#     elif N_PARAMS == 1:
-#         hydro.verbose = True
-#         param_numbers = range(0, N_PARAMS)
-#         arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
-#                       parent_directory) for param_number in param_numbers]
-#         for args in arguments:
-#             produce_family_of_rasters(*args)
+    if N_PARAMS > 1:
+        # It only needs small adjustsments, see the 1 parameter case and extend
+        raise NotImplementedError('Multiprocessing not implemented fully')
+        hydro.verbose = True
+        param_numbers = [1]
+        multiprocessing_arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
+                                      parent_directory) for param_number in param_numbers]
+        with mp.Pool(processes=N_CPU) as pool:
+            pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
+
+    elif N_PARAMS == 1:
+        hydro.verbose = True
+        param_numbers = [1] 
+        # arguments = [(param_number, PARAMS, hydro, cwl_hydro, net_daily_source,
+        #               parent_directory) for param_number in param_numbers]
+        # for args in arguments:
+        #     produce_family_of_rasters(*args)
+
+        for param_number in param_numbers:
+            # Set initial zeta
+            hydro.zeta = fp.CellVariable(
+                name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
+
+            hydro_masters.set_hydrological_params(hydro, cwl_hydro, PARAMS, param_number)
+
+            hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
+                    parent_directory)
 
 
 # %% Run Windows
 if platform.system() == 'Windows':
     hydro.verbose = True
     N_PARAMS = 1
-    param_numbers = [7, 8]
-
-    NDAYS = 96
+    param_numbers = [1]
 
     for param_number in param_numbers:
         # Set initial zeta

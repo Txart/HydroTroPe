@@ -152,7 +152,7 @@ def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
     day = 0
     needs_smaller_timestep = False
     NORMAL_TIMESTEP = 24  # Hourly
-    SMALLER_TIMESTEP = 1000
+    SMALLER_TIMESTEP = 100
 
     while day < N_DAYS:
         print(f'\n computing day {day}')

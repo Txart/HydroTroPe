@@ -8,7 +8,7 @@ import numpy as np
 import geopandas as gpd
 import matplotlib.pyplot as plt
 
-
+import utilities
 #%% Funcs
 
 def get_dipwell_names_and_locations(dipwell_info:gpd.geodataframe)->tuple[list,np.ndarray]:
@@ -56,6 +56,20 @@ def mse_one_parameter_modelled_and_measured_WTD(n_param:int, measured_WTD: np.nd
     return mse
 
 
+def remove_dipwells_without_measurements(dipwell_names:list, dipwell_locations: np.ndarray, dipwell_names_with_some_measurement:list):
+    dipwell_names_with_no_measurements =  set(dipwell_names) - set(dipwell_names_with_some_measurement)
+    
+    # Delete names
+    dipwell_names_new = [name for name in dipwell_names if name not in dipwell_names_with_no_measurements]
+
+    # Delete locations preserving the order. Index items first:
+    indices_to_remove = []
+    for name in dipwell_names_with_no_measurements:
+        indices_to_remove.append(dipwell_names.index(name))
+    # Delete
+    dipwell_locations_new = np.delete(dipwell_locations, indices_to_remove, axis=0)
+
+    return dipwell_names_new, dipwell_locations_new
 
 #%% Main script
 if '__name__' == '__main__':
@@ -67,7 +81,7 @@ if '__name__' == '__main__':
     filenames_df = pd.read_excel(fn_pointers, header=2, dtype=str, engine='openpyxl')
 
     NDAYS = 96 # Number of computed days
-    PARAMS = [1, 2, 3, 4, 5, 6, 7, 8]
+    PARAMS = [1, 4, 5]
 
     # Read measured WTD and dipwell locations
     dipwell_fn = Path(filenames_df[filenames_df.Content == 'dipwell_measurements'].Path.values[0])
@@ -75,6 +89,10 @@ if '__name__' == '__main__':
     dipwell_location_fn = Path(filenames_df[filenames_df.Content == 'sensor_locations'].Path.values[0])
     dipwell_info = gpd.read_file(dipwell_location_fn)
     dipwell_names, dipwell_locations = get_dipwell_names_and_locations(dipwell_info)
+    # Only take those dipwells for which we have at least one measurement
+    dipwell_names_with_some_measurement = list(dipwell_WTD.drop('Date', axis='columns').columns)
+    dipwell_names, dipwell_locations = remove_dipwells_without_measurements(dipwell_names, dipwell_locations, dipwell_names_with_some_measurement)
+    # Sort dipwells to compare properly with measured
     dipwell_WTD_sorted = sort_dipwell_WTD_according_to_names(dipwell_names, dipwell_WTD) # shape: [day, WTD_meas]
     dipwell_WTD_sorted_meters = dipwell_WTD_sorted * 0.01 # cm -> m
 
@@ -106,5 +124,7 @@ for p in PARAMS:
     plt.plot(dipwell_WTD_sorted_meters, marker='.', color='gray', linestyle='None')
     plt.xlabel('Time (days)')
     plt.ylabel('WT (m)')
+    
+    plt.savefig(f'output/plots/param_{p}_calibration.png')
 
 # %%
