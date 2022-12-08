@@ -44,7 +44,7 @@ parser.set_defaults(blockOpt=True)
 blockOpt = args.blockOpt
 N_CPU = args.ncpu
 
-parent_directory = Path(r"C:\Users\03125327\github\fc_hydro_kalimantan_2022")
+parent_directory = Path(r"C:\Users\03125327\github\hydrotrope")
 data_parent_folder = Path(r"C:\Users\03125327\Dropbox\PhD\Computation\ForestCarbon\2022 Kalimantan customer work\0. Raw Data")
 fn_pointers = parent_directory.joinpath(r'file_pointers.xlsx')
 
@@ -59,43 +59,52 @@ filenames_df = pd.read_excel(fn_pointers, header=2, dtype=str, engine='openpyxl'
 if not hydro_masters._is_same_weather_station_names_in_sourcesink_and_coords(fn_pointers):
     raise ValueError('Weather station names in the weather station coords file and the sourcesink file must be equal. ABORTING.')
 
-graph_fn = Path(filenames_df[filenames_df.Content ==
+def read_graph(filenames_df):
+    graph_fn = Path(filenames_df[filenames_df.Content ==
                 'channel_network_graph_pickle'].Path.values[0])
-graph = pickle.load(open((graph_fn), "rb"))
+    return pickle.load(open((graph_fn), "rb"))
 
-fn_sourcesink = Path(filenames_df[filenames_df.Content == 'sourcesink'].Path.values[0])
-sourcesink_df = pd.read_excel(fn_sourcesink)
-
+def read_sourcesink(filenames_df):
+    fn_sourcesink = Path(filenames_df[filenames_df.Content == 'sourcesink'].Path.values[0])
+    return pd.read_excel(fn_sourcesink)
+    
+graph = read_graph(filenames_df)
+sourcesink_df = read_sourcesink(filenames_df)
 
 #%% Set up all the classes needed for the model
 
 channel_network = ChannelNetwork(
     graph=graph, block_height_from_surface=0.0, block_coeff_k=2000.0,
     y_ini_below_DEM=-0.0, Q_ini_value=0.0, channel_bottom_below_DEM=8.0,
-    y_BC_below_DEM=-0.5, Q_BC=0.0, channel_width=3.5, work_without_blocks=not blockOpt)
+    y_BC_below_DEM=-0.0, Q_BC=0.0, channel_width=3.5, work_without_blocks=not blockOpt)
 
 peatland = Peatland(cn=channel_network, fn_pointers=fn_pointers)
 
 peat_hydro_params = PeatlandHydroParameters(
     dt=1/24,  # dt in days
     dx=50,  # dx in meters, only used if structured mesh
-    max_sweeps=1000, fipy_desired_residual=1e-5,
-    s1=0.0, s2=0.0, t1=0, t2=0,
-    use_several_weather_stations=True)
+    max_sweeps=1000, # max number of iterations for convergence of FiPy's numerical solution
+    fipy_desired_residual=1e-5, # Residual for FiPy
+    s1=0.0, s2=0.0, t1=0, t2=0, # Peat hydraulic properties. Storage coefficient and transmissivity.
+    use_several_weather_stations=True # If False, sets single P - ET everywhere. If true, uses different weather stations' position.
+    )
 
 # Set up cwl computation
-cwl_params = CWLHydroParameters(g=9.8,  # g in meters per second
-                                dt=3600,  # dt in seconds
-                                dx=100,  # dx in meters
-                                ntimesteps=1,  # outer loop. Number of steps simulated
-                                preissmann_a=0.6,
-                                # threshold position for n_manning in metres below dem
-                                porous_threshold_below_dem=3.0,
+cwl_params = CWLHydroParameters(g=9.8,  # Acceleration of gravity m/s^2.
+                                dt=3600,  # s 
+                                dx=100,  # m
+                                ntimesteps=1,  # outer loop. If =1, it simulates dt seconds into the future. If =2, 2*dt, etc. So it is usually =1.
+                                preissmann_a=0.6, # Parameter in the Preissmann method
+                                porous_threshold_below_dem=3.0, # threshold position for n_manning in metres below dem. See shape of n_Manning()
                                 n1=5,  # params for n_manning
-                                n2=1,
-                                max_niter_newton=int(1e5), max_niter_inexact=int(50),
-                                rel_tol=1e-7, abs_tol=1e-7, weight_A=5e-2, weight_Q=5e-2, ncpus=1,
-                                downstream_diri_BC=False)
+                                n2=1, # params for n_manning
+                                max_niter_newton=int(1e5), # Maximum number of iterations for the Newton method
+                                max_niter_inexact=int(50), # Max number of iters for the calculation of the Jacobian in the inexact (aka accelerated) Newton method
+                                rel_tol=1e-7, abs_tol=1e-7, # Tolerances for convergence
+                                weight_A=5e-2, weight_Q=5e-2, # Scale the solution of the Newton method to update the solution variables
+                                ncpus=1,
+                                downstream_diri_BC=False # Downstream BC for the channel reaches. If False, no flux Neumann are imposed.
+                                )
 
 cwl_hydro = set_up_channel_hydrology(model_type='diff-wave-implicit-inexact',
                                      cwl_params=cwl_params,

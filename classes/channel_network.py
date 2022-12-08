@@ -13,21 +13,23 @@ class ChannelNetwork:
                  work_without_blocks,
                  is_components=False) -> None:
         """This class has 2 purposes:
-                1. get data from cwl network and store it as (properly ordered) nparrays
+                1. get data from CWL network and store it as (properly ordered) nparrays
                 2. Compute all things related to the canal topology and its impact to the discrete form of the PDE equations
 
         Args:
-            graph ([type]): [description]
-            block_height_from_surface ([type]): [description]
-            block_coeff_k ([type]): [description] 
-            y_ini_below_DEM ([type]): [description]
-            Q_ini_value ([type]): [description]
-            q_value ([type]): [description]
-            channel_bottom_below_DEM : in m
+            graph (networkx.DiGraph): Directed graph containing the topology of the channel network
+            block_height_from_surface (float): m. tallest point of the block or dam (aka block head) as measured from local peat surface.
+            block_coeff_k (float): Coefficient of discharge through blocks.
+            y_ini_below_DEM (float): m, negative downwards. Initial CWL for the simulation.
+            y_BC_below_DEM (float): m, neg. downw. Initial and boundary CWL at downstream nodes. Initial CWL always imposed; BC imposed only if CWLHydroParameters.downstream_diri_BC==True.
+            Q_ini_value (float): m^3/s. Initial discharge.
+            channel_bottom_below_DEM : m from local peat surface. Channel bed depth.
             work_without_blocks (bool) : if True, run as if there were no blocks in the channel network
-            is_components ([bool, default False]) : set some attributes needed to run the diffusive wave
-                                                    approximation which are expensive to compute for the whole netwok
-                                                    and should only be called for each of the components.
+            is_components ([bool, default False]) : This class may be instantiated to store the information of the whole 
+                                                    channel network, or of the individual, disconnected components.
+                                                    This flag should be True only in the latter case.
+                                                    It sets some attributes needed to run the diffusive wave
+                                                    approximation which are expensive to compute for the whole netwok.
         """
         # Unpack
         self.graph = graph

@@ -10,3 +10,6 @@ conda activate hydro
 ```
 
 And you´re good to run the program
+
+-------------
+(The name for this repo was created using openAI's ChatGPT)

@@ -206,8 +206,10 @@ def set_up_channel_hydrology(model_type, cn: ChannelNetwork, cwl_params: CWLHydr
     """
     # cwl_model (str, optional):
     if model_type == 'preissmann':
+        raise Warning('You have selected the Preissmann solver for the canal water level. It has fewer features than the others, and the code might not run.')
         return PreissmanModel(cn=cn, cwl_params=cwl_params)
     elif model_type == 'diff-wave-implicit':
+        raise Warning('You have selected the exact Newton method for the solution of the diffusive wave approximation of the open channel flow equations. Expect this to be slower than the inexact counterpart.')
         return DiffWaveModel(cn=cn, cwl_params=cwl_params, inexact_newton_raphson=False)
     elif model_type == 'diff-wave-implicit-inexact':
         return DiffWaveModel(cn=cn, cwl_params=cwl_params, inexact_newton_raphson=True)
