@@ -11,12 +11,12 @@ import utilities
 
 #%%
 class CWLHydroParameters:
-    def __init__(self, g, dt, dx, porous_threshold_below_dem, n1, n2, preissmann_a,
+    def __init__(self, dt, dx, porous_threshold_below_dem, n1, n2, preissmann_a,
                  max_niter_newton, max_niter_inexact, ntimesteps, rel_tol, abs_tol, weight_A, weight_Q, ncpus,
                  downstream_diri_BC) -> None:
-        self.g = g  # gravity
-        self.dt = dt  # same units as g
-        self.dx = dx
+        self.g = 9.8  # m/s², Acceleration of gravity
+        self.dt = dt  # s, timestep
+        self.dx = dx  # m, delta x from finite dif.
         self.porous_threshold_below_dem = porous_threshold_below_dem # position where n_manning = max, in metres from surface
         self.n1 = n1 # n_manning is prop to exp(-n1*y^n2), where y is elevation from ref. datum
         self.n2 = n2 

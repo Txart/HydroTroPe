@@ -90,8 +90,7 @@ peat_hydro_params = PeatlandHydroParameters(
     )
 
 # Set up cwl computation
-cwl_params = CWLHydroParameters(g=9.8,  # Acceleration of gravity m/s^2.
-                                dt=3600,  # s 
+cwl_params = CWLHydroParameters(dt=3600,  # s 
                                 dx=100,  # m
                                 ntimesteps=1,  # outer loop. If =1, it simulates dt seconds into the future. If =2, 2*dt, etc. So it is usually =1.
                                 preissmann_a=0.6, # Parameter in the Preissmann method
