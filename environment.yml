@@ -1,0 +1,23 @@
+name: hydrotrope
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3
+  - fipy
+  - matplotlib
+  - pandas
+  - numpy
+  - geopandas
+  - rasterio
+  - git
+  - xlrd
+  - networkx
+  - tqdm
+  - numba
+  - scipy
+  - openpyxl
+  - ipython
+  - ipykernel
+  - gmsh
