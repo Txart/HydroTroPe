@@ -151,7 +151,7 @@ def get_initial_zeta(origin:str, filenames_df):
 
 initial_zeta = get_initial_zeta(origin=initial_zeta_origin, filenames_df=filenames_df)
 
-#%% Run multiprocessing csc
+#%% Run hydro
 if platform.system() == 'Linux':
 
     if N_PARAMS > 1:
