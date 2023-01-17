@@ -127,18 +127,29 @@ N_PARAMS = N_CPU
 
 #%% Initial WTD
 # Read from pickle
-initial_zeta_from_pickle = False
-if initial_zeta_from_pickle:
-    initial_zeta_pickle_fn = Path(
-        filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
-    initial_zeta = pickle.load(open(initial_zeta_pickle_fn, 'rb'))
-else:
-    initial_zeta_fn = "~/Programming/github/fc_hydro_kalimantan_2022/output/params_number_1/no_blocks/first96days/zeta_after_96_DAYS.tif"
-    mesh_centroids_coords = np.column_stack(hydro.mesh.cellCenters.value)
-    initial_zeta = utilities.sample_raster_from_coords(
-            raster_filename=initial_zeta_fn,
-            coords=mesh_centroids_coords)
-    initial_zeta = np.nan_to_num(initial_zeta, -0.2) # if mesh larger than raster, fill with value
+initial_zeta_origin = 'pickle' # pickle, tiff or constant
+
+def set_initial_zeta(origin:str, filenames_df):
+    if origin == 'pickle':
+        initial_zeta_pickle_fn = Path(
+            filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
+        return pickle.load(open(initial_zeta_pickle_fn, 'rb'))
+
+    elif origin == 'tiff':
+        initial_zeta_fn = "enter_filename.tif"
+        mesh_centroids_coords = np.column_stack(hydro.mesh.cellCenters.value)
+        initial_zeta = utilities.sample_raster_from_coords(
+                raster_filename=initial_zeta_fn,
+                coords=mesh_centroids_coords)
+        return np.nan_to_num(initial_zeta, -0.2) # if mesh larger than raster, fill with value
+
+    elif origin == 'constant':
+        return -0.2
+
+    else:
+        raise(NameError)
+
+set_initial_zeta(origin=initial_zeta_origin, filenames_df=filenames_df)
 
 #%% Run multiprocessing csc
 if platform.system() == 'Linux':
