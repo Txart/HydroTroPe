@@ -170,7 +170,7 @@ if platform.system() == 'Linux':
             hydro.zeta = fp.CellVariable(
                 name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
 
-            hydro_masters.set_hydrological_params(hydro, cwl_hydro,
+            hydro_masters.set_hydrological_params(hydro,
                                                   params_hydro=file_params_hydro,
                                                   param_number=param_number)
 
@@ -189,7 +189,7 @@ if platform.system() == 'Windows':
         hydro.zeta = fp.CellVariable(
             name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
 
-        hydro_masters.set_hydrological_params(hydro, cwl_hydro,
+        hydro_masters.set_hydrological_params(hydro,
                                                 params_hydro=file_params_hydro,
                                                 param_number=param_number)
 

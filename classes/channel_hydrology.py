@@ -9,7 +9,7 @@ import math_preissmann, math_diff_wave
 import cwl_utilities
 import utilities
 
-#%%
+#%nu%
 class CWLHydroParameters:
     def __init__(self, dt, dx, params_channel, 
                  downstream_diri_BC) -> None:
@@ -27,8 +27,8 @@ class CWLHydroParameters:
         self.a = 0.6  
 
         # Max number of iterations for...
-        self.max_niter_newton = float(params_channel['max_niter_newton']) # the exact Newton method
-        self.max_niter_inexact = float(params_channel['max_niter_newton_inexact']) # the inexact Newton method
+        self.max_niter_newton = int(params_channel['max_niter_newton']) # the exact Newton method
+        self.max_niter_inexact = int(params_channel['max_niter_newton_inexact']) # the inexact Newton method
         
         # Tolerance to test solution convergence
         self.rel_tol = 1e-7

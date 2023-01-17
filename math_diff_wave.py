@@ -143,7 +143,9 @@ def compute_J_and_F(y: np.ndarray, y_old: np.ndarray,
 def compute_F(y: np.ndarray, y_old: np.ndarray,
               y_b: np.ndarray, B: np.ndarray, q: np.ndarray,
               dt: float, dx: float,
-              y_porous_threshold: np.ndarray, n1: float, n2: float,
+              y_porous_threshold: np.ndarray,
+              n_threshold:float,
+              n1: float, n2: float,
               nodes: np.ndarray, nodes_neighbours: list):
     """computes only  right hand side (not the Jacobian) for newton raphson method.
     Useful for inexact NR method. 
@@ -164,7 +166,7 @@ def compute_F(y: np.ndarray, y_old: np.ndarray,
     """
     # Here, y is canal water height from common reference datum, not from DEM
     # y_b is channel bottom from common ref point
-    n_manning = variable_n_manning(y, y_porous_threshold, n1, n2)
+    n_manning = variable_n_manning(y, y_porous_threshold, n_threshold, n1, n2)
     A_vec = compute_A(y, y_b, B)
     R_vec = compute_R(y, y_b, B)
     K_vec = compute_K(A_vec, R_vec, n_manning)
@@ -315,7 +317,9 @@ def _solve_newton_raphson_inexact_newton_raphson(max_niter: int, max_niter_inexa
             F_u = compute_F(
                 y=y, y_old=y_previous, y_b=bottom, B=B, q=q,
                 dt=dt, dx=dx,
-                y_porous_threshold=y_porous_threshold,  n1=n1, n2=n2,
+                y_porous_threshold=y_porous_threshold,
+                n_threshold=n_threshold,
+                n1=n1, n2=n2,
                 nodes=nodes,
                 nodes_neighbours=typed_node_neighbours)
             
