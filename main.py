@@ -84,7 +84,8 @@ channel_network = ChannelNetwork(
     params_channel=file_params_channel,
     work_without_blocks=not blockOpt)
 
-peatland = Peatland(cn=channel_network, fn_pointers=fn_pointers)
+peatland = Peatland(cn=channel_network,
+                    fn_pointers=fn_pointers)
 
 peat_hydro_params = PeatlandHydroParameters(
     dt=1/24,  # dt in days
@@ -98,12 +99,7 @@ peat_hydro_params = PeatlandHydroParameters(
 # Set up cwl computation
 cwl_params = CWLHydroParameters(dt=3600,  # s 
                                 dx=100,  # m
-                                n_threshold = 1000,
-                                porous_threshold_below_dem=3.0, # threshold position for n_manning in metres below dem. See shape of n_Manning()
-                                n1=5,  # params for n_manning
-                                n2=1, # params for n_manning
-                                max_niter_newton=int(1e5),
-                                max_niter_inexact=int(50),
+                                params_channel=file_params_channel,
                                 downstream_diri_BC=False 
                                 )
 
