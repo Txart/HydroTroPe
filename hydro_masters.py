@@ -5,8 +5,6 @@ import fipy as fp
 from pathlib import Path
 import copy
 from tqdm import tqdm
-import pickle
-import utilities
 
 from classes.parameterizations import ExponentialBelowOneAboveStorageExpoTrans
 #%%
@@ -21,26 +19,6 @@ def _is_same_weather_station_names_in_sourcesink_and_coords(fn_pointers:Path)->b
     wscoords = pd.read_excel(fn_wscoords, engine='openpyxl') 
 
     return set(wscoords.Name.values) == set(sourcesink_df.columns)
-
-def set_initial_zeta(origin:str, filenames_df):
-    if origin == 'pickle':
-        initial_zeta_pickle_fn = Path(
-            filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
-        return pickle.load(open(initial_zeta_pickle_fn, 'rb'))
-
-    elif origin == 'tiff':
-        initial_zeta_fn = "enter_filename.tif"
-        mesh_centroids_coords = np.column_stack(hydro.mesh.cellCenters.value)
-        initial_zeta = utilities.sample_raster_from_coords(
-                raster_filename=initial_zeta_fn,
-                coords=mesh_centroids_coords)
-        return np.nan_to_num(initial_zeta, -0.2) # if mesh larger than raster, fill with value
-
-    elif origin == 'constant':
-        return -0.2
-
-    else:
-        raise(NameError)
 
 # %% Simulation functions
 
