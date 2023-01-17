@@ -127,7 +127,7 @@ N_PARAMS = N_CPU
 
 #%% Initial WTD
 # Read from pickle
-initial_zeta_from_pickle = True
+initial_zeta_from_pickle = False
 if initial_zeta_from_pickle:
     initial_zeta_pickle_fn = Path(
         filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
@@ -140,7 +140,7 @@ else:
             coords=mesh_centroids_coords)
     initial_zeta = np.nan_to_num(initial_zeta, -0.2) # if mesh larger than raster, fill with value
 
-# %% Run multiprocessing csc
+#%% Run multiprocessing csc
 if platform.system() == 'Linux':
 
     if N_PARAMS > 1:
