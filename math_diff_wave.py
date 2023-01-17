@@ -44,7 +44,7 @@ def compute_dK_mean_dh(A, R, dA_dh, dR_dh, n_manning):
 
 
 @njit
-def variable_n_manning(y: np.ndarray, y_porous_threshold: np.ndarray, n1: float, n2: float) -> np.ndarray:
+def variable_n_manning(y: np.ndarray, y_porous_threshold: np.ndarray, n_threshold:float, n1: float, n2: float) -> np.ndarray:
     # In traditional open channel flow, equations stop being valid when water is below
     # the channel bottom. In reality, though, water still flows in peat
     # (moreover, distinction between peat and channel might be difficult to do)
@@ -61,9 +61,7 @@ def variable_n_manning(y: np.ndarray, y_porous_threshold: np.ndarray, n1: float,
     # Cap at porous threshold
     zeta[zeta < 0] = 0.0
     
-    N_POROUS_THRESHOLD = 10000 # value at which n is capped
-
-    n_manning = N_POROUS_THRESHOLD / np.exp(n1 * zeta**n2)
+    n_manning = n_threshold/ np.exp(n1 * zeta**n2)
 
     return n_manning
 
@@ -72,7 +70,9 @@ def variable_n_manning(y: np.ndarray, y_porous_threshold: np.ndarray, n1: float,
 def compute_J_and_F(y: np.ndarray, y_old: np.ndarray,
                     y_b: np.ndarray, B: np.ndarray, q: np.ndarray,
                     dt: float, dx: float,
-                    y_porous_threshold: np.ndarray, n1: float, n2: float,
+                    y_porous_threshold: np.ndarray,
+                    n_threshold: float,
+                    n1: float, n2: float,
                     nodes: np.ndarray, nodes_neighbours: list):
     """computes jacobian and right hand side for newton raphson method
 
@@ -93,7 +93,7 @@ def compute_J_and_F(y: np.ndarray, y_old: np.ndarray,
     """
     # Here, y is canal water height from common reference datum, not from DEM
     # y_b is channel bottom from common ref point
-    n_manning = variable_n_manning(y, y_porous_threshold, n1=n1, n2=n2)
+    n_manning = variable_n_manning(y, y_porous_threshold, n_threshold=n_threshold, n1=n1, n2=n2)
     A_vec = compute_A(y, y_b, B)
     R_vec = compute_R(y, y_b, B)
     K_vec = compute_K(A_vec, R_vec, n_manning)
@@ -193,6 +193,7 @@ def compute_F(y: np.ndarray, y_old: np.ndarray,
 @njit
 def _solve_newton_raphson_numba(max_niter: int, dt: float, dx: float, g:float, n1: float, n2: float,
                                 y_porous_threshold: np.ndarray,
+                                n_threshold:float,
                                 y: np.ndarray, y_previous: np.ndarray, bottom: np.ndarray, B: np.ndarray, q: np.ndarray,
                                 nodes: np.ndarray, typed_node_neighbours: list,
                                 block_heights: np.ndarray,
@@ -207,7 +208,9 @@ def _solve_newton_raphson_numba(max_niter: int, dt: float, dx: float, g:float, n
         J, F_u = compute_J_and_F(
             y=y, y_old=y_previous, y_b=bottom, B=B, q=q,
             dt=dt, dx=dx,
-            y_porous_threshold=y_porous_threshold, n1=n1, n2=n2,
+            y_porous_threshold=y_porous_threshold,
+            n_threshold=n_threshold,
+            n1=n1, n2=n2,
             nodes=nodes,
             nodes_neighbours=typed_node_neighbours)
        
@@ -254,6 +257,7 @@ def _solve_newton_raphson_numba(max_niter: int, dt: float, dx: float, g:float, n
 def _solve_newton_raphson_inexact_newton_raphson(max_niter: int, max_niter_inexact: int, 
                                 dt: float, dx: float, g:float, n1: float, n2: float,
                                 y_porous_threshold: np.ndarray,
+                                n_threshold:float,
                                 y: np.ndarray, y_previous: np.ndarray, bottom: np.ndarray, B: np.ndarray, q: np.ndarray,
                                 nodes: np.ndarray, typed_node_neighbours: list,
                                 block_heights: np.ndarray,
@@ -274,7 +278,9 @@ def _solve_newton_raphson_inexact_newton_raphson(max_niter: int, max_niter_inexa
             J, F_u = compute_J_and_F(
                 y=y, y_old=y_previous, y_b=bottom, B=B, q=q,
                 dt=dt, dx=dx,
-                y_porous_threshold=y_porous_threshold, n1=n1, n2=n2,
+                y_porous_threshold=y_porous_threshold,
+                n_threshold=n_threshold,
+                n1=n1, n2=n2,
                 nodes=nodes,
                 nodes_neighbours=typed_node_neighbours)
             
@@ -382,6 +388,7 @@ def diff_wave_newton_raphson(y, y_previous, bottom, B, q, general_params, channe
         g=general_params.g,
         n1=general_params.n1, n2=general_params.n2,
         y_porous_threshold = channel_network.dem - general_params.porous_threshold_below_dem,
+        n_threshold=general_params.n_threshold,
         y=y, y_previous=y_previous, bottom=bottom, B=B, q=q,
         nodes=np.array(nodes), typed_node_neighbours=typed_node_neighbours,
         block_heights=channel_network.block_heights,
@@ -421,6 +428,7 @@ def diff_wave_inexact_newton_raphson(y, y_previous, bottom, B, q, general_params
         g=general_params.g,
         n1=general_params.n1, n2=general_params.n2,
         y_porous_threshold = channel_network.dem - general_params.porous_threshold_below_dem,
+        n_threshold=general_params.n_threshold,
         y=y, y_previous=y_previous, bottom=bottom, B=B, q=q,
         nodes=np.array(nodes), typed_node_neighbours=typed_node_neighbours,
         block_heights=channel_network.block_heights,

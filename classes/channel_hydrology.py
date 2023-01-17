@@ -11,27 +11,41 @@ import utilities
 
 #%%
 class CWLHydroParameters:
-    def __init__(self, dt, dx, porous_threshold_below_dem, n1, n2, preissmann_a,
-                 max_niter_newton, max_niter_inexact, ntimesteps, rel_tol, abs_tol, weight_A, weight_Q, ncpus,
+    def __init__(self, dt, dx, n_threshold, porous_threshold_below_dem, n1, n2, 
+                 max_niter_newton, max_niter_inexact, 
                  downstream_diri_BC) -> None:
         self.g = 9.8  # m/s², Acceleration of gravity
         self.dt = dt  # s, timestep
         self.dx = dx  # m, delta x from finite dif.
+
+        # Parameters for the function describing the n_manning channel network friction coefficient.
         self.porous_threshold_below_dem = porous_threshold_below_dem # position where n_manning = max, in metres from surface
+        self.n_threshold = n_threshold # Maximum value of n_manning, capped below the porous threshold.
         self.n1 = n1 # n_manning is prop to exp(-n1*y^n2), where y is elevation from ref. datum
         self.n2 = n2 
-        self.a = preissmann_a  # weight parameter in Preissmann scheme
-        self.max_niter_newton = max_niter_newton
-        self.max_niter_inexact = max_niter_inexact
-        self.rel_tol = rel_tol
-        self.abs_tol = abs_tol
-        self.weight_A = weight_A
-        self.weight_Q = weight_Q
-        self.ntimesteps = ntimesteps
-        # Number of cpus to use by the cwl algorithm. If >1, multiprocess.
-        self.ncpus = ncpus
+
+        # weight parameter in Preissmann scheme
+        self.a = 0.6  
+
+        # Max number of iterations for...
+        self.max_niter_newton = max_niter_newton # the exact Newton method
+        self.max_niter_inexact = max_niter_inexact # the inexact Newton method
         
-        # If True, BC=initial h in downstream nodes. If False, Q=0 no flow BC
+        # Tolerance to test solution convergence
+        self.rel_tol = 1e-7
+        self.abs_tol = 1e-7
+
+        # Weights to scale the solution of the Newton method to update the solution variables
+        self.weight_A = 5e-2
+        self.weight_Q = 5e-2
+
+        # outer loop. If =1, it simulates dt seconds into the future. If =2, 2*dt, etc. So it is usually =1.
+        self.ntimesteps = 1
+
+        # Number of cpus to use by the cwl algorithm. If >1, multiprocess.
+        self.ncpus = 1 
+
+        # boolean for Downstream BC for the channel reaches. If True, ChannelNetwork.y_BC_below_DEM dirichlet values area applied at downstream nodes. If False, no flux Neumann are imposed.
         self.downstream_diri_BC = downstream_diri_BC
 
         pass

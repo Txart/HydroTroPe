@@ -44,8 +44,8 @@ parser.set_defaults(blockOpt=True)
 blockOpt = args.blockOpt
 N_CPU = args.ncpu
 
-parent_directory = Path(r"C:\Users\03125327\github\hydrotrope")
-data_parent_folder = Path(r"C:\Users\03125327\Dropbox\PhD\Computation\ForestCarbon\2022 Kalimantan customer work\0. Raw Data")
+parent_directory = Path("Programming/github/HydroTroPe")
+data_parent_folder = Path(r"PDropbox\PhD\Computation\ForestCarbon\2022 Kalimantan customer work\0. Raw Data")
 fn_pointers = parent_directory.joinpath(r'file_pointers.xlsx')
 
 if N_CPU != 1:
@@ -76,7 +76,8 @@ sourcesink_df = read_sourcesink(filenames_df)
 channel_network = ChannelNetwork(
     graph=graph, block_height_from_surface=0.0, block_coeff_k=2000.0,
     y_ini_below_DEM=-0.0, Q_ini_value=0.0, channel_bottom_below_DEM=8.0,
-    y_BC_below_DEM=-0.0, Q_BC=0.0, channel_width=3.5, work_without_blocks=not blockOpt)
+    y_BC_below_DEM=-0.0, # Dirichlet BC at the last (i.e., downstream) nodes of a channel network. It is only imposed if CWLHydroParameters.downsream_diri_BC is set to True. If it is False, Neumann BC are imposed.
+    Q_BC=0.0, channel_width=3.5, work_without_blocks=not blockOpt)
 
 peatland = Peatland(cn=channel_network, fn_pointers=fn_pointers)
 
@@ -92,17 +93,13 @@ peat_hydro_params = PeatlandHydroParameters(
 # Set up cwl computation
 cwl_params = CWLHydroParameters(dt=3600,  # s 
                                 dx=100,  # m
-                                ntimesteps=1,  # outer loop. If =1, it simulates dt seconds into the future. If =2, 2*dt, etc. So it is usually =1.
-                                preissmann_a=0.6, # Parameter in the Preissmann method
+                                n_threshold = 1000,
                                 porous_threshold_below_dem=3.0, # threshold position for n_manning in metres below dem. See shape of n_Manning()
                                 n1=5,  # params for n_manning
                                 n2=1, # params for n_manning
-                                max_niter_newton=int(1e5), # Maximum number of iterations for the Newton method
-                                max_niter_inexact=int(50), # Max number of iters for the calculation of the Jacobian in the inexact (aka accelerated) Newton method
-                                rel_tol=1e-7, abs_tol=1e-7, # Tolerances for convergence
-                                weight_A=5e-2, weight_Q=5e-2, # Scale the solution of the Newton method to update the solution variables
-                                ncpus=1,
-                                downstream_diri_BC=False # Downstream BC for the channel reaches. If False, no flux Neumann are imposed.
+                                max_niter_newton=int(1e5),
+                                max_niter_inexact=int(50),
+                                downstream_diri_BC=False 
                                 )
 
 cwl_hydro = set_up_channel_hydrology(model_type='diff-wave-implicit-inexact',
