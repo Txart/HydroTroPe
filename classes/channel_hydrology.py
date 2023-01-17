@@ -9,7 +9,7 @@ import math_preissmann, math_diff_wave
 import cwl_utilities
 import utilities
 
-#%nu%
+#%%
 class CWLHydroParameters:
     def __init__(self, dt, dx, params_channel, 
                  downstream_diri_BC) -> None:
