@@ -66,7 +66,7 @@ def read_graph(filenames_df):
 
 def read_sourcesink(filenames_df):
     fn_sourcesink = Path(filenames_df[filenames_df.Content == 'sourcesink'].Path.values[0])
-    return pd.read_excel(fn_sourcesink)
+    return pd.read_excel(fn_sourcesink, engine='openpyxl')
     
 graph = read_graph(filenames_df)
 sourcesink_df = read_sourcesink(filenames_df)

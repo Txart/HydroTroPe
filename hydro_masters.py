@@ -9,14 +9,14 @@ from tqdm import tqdm
 from classes.parameterizations import ExponentialBelowOneAboveStorageExpoTrans
 #%%
 
-def _is_same_weather_station_names_in_sourcesink_and_coords(fn_pointers:str)->bool:
+def _is_same_weather_station_names_in_sourcesink_and_coords(fn_pointers:Path)->bool:
     filenames_df = pd.read_excel(fn_pointers, header=2, dtype=str, engine='openpyxl')
     # read sourcesink
-    fn_sourcesink = Path(filenames_df[filenames_df.Content == 'sourcesink'].Path.values[0])
-    sourcesink_df = pd.read_excel(fn_sourcesink)
+    fn_sourcesink = Path(filenames_df[filenames_df.Content == 'sourcesink'].Path.values[0], engine='openpyxl')
+    sourcesink_df = pd.read_excel(fn_sourcesink, engine='openpyxl')
     # read ws coords
-    fn_wscoords = Path(filenames_df[filenames_df.Content == 'weather_station_coords'].Path.values[0])
-    wscoords = pd.read_excel(fn_wscoords) 
+    fn_wscoords = Path(filenames_df[filenames_df.Content == 'weather_station_coords'].Path.values[0], engine='openpyxl')
+    wscoords = pd.read_excel(fn_wscoords, engine='openpyxl') 
 
     return set(wscoords.Name.values) == set(sourcesink_df.columns)
 
