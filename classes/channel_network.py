@@ -30,9 +30,12 @@ class ChannelNetwork:
                                                     It sets some attributes needed to run the diffusive wave
                                                     approximation which are expensive to compute for the whole netwok.
         """
-        # Unpack. Read params from file.
+        # Unpack
         self.graph = graph
+        self.work_without_blocks = work_without_blocks
+        self.params_channel = params_channeli
 
+        # Read params from file.
         # Dirichlet BC at the last (i.e., downstream) nodes of a channel network. It is only imposed if CWLHydroParameters.downsream_diri_BC is set to True. If it is False, Neumann BC are imposed.
         self.y_BC_below_DEM = float(params_channel['y_BC_below_DEM'])
         self.block_height_from_surface = float(params_channel['block_height_from_surface'])
@@ -43,7 +46,6 @@ class ChannelNetwork:
         self.Q_BC = float(params_channel['Q_BC'])
         self.channel_width = float(params_channel['channel_width'])
         self.channel_bottom_below_DEM = float(params_channel['channel_bottom_below_DEM']) # m below DEM, positive downwards
-        self.work_without_blocks = float(params_channel['work_without_blocks'])
 
 
         # transpose is needed because of difference with NetworkX
@@ -90,11 +92,11 @@ class ChannelNetwork:
         self.pos_of_BC_eqs_to_add = self.pos_eqs_to_remove[self.number_junction_eqs_to_add:]
 
         # Node variables in nparray format
-        self.B = channel_width * np.ones(self.n_nodes)
-        self.y = self.dem - y_ini_below_DEM
-        self.Q = Q_ini_value * np.ones(self.n_nodes)
+        self.B = self.channel_width * np.ones(self.n_nodes)
+        self.y = self.dem - self.y_ini_below_DEM
+        self.Q = self.Q_ini_value * np.ones(self.n_nodes)
         # channel bottom from reference datum, m
-        self.bottom = self.dem - channel_bottom_below_DEM
+        self.bottom = self.dem - self.channel_bottom_below_DEM
 
         # Set y_BC and Q_BC inside the initial conditions
         # dtype=int necessary in case downstream_nodes or upstream_nodes are empty lists
@@ -113,7 +115,7 @@ class ChannelNetwork:
             nodes_with_blocks = [node for node, is_block in block_attr.items() if is_block]
             self.block_nodes = self.translate_from_label_in_graph_to_position_in_vector(nodes_with_blocks)
             self.block_heights = np.array(
-                [self.dem[n] + block_height_from_surface for i, n in enumerate(self.block_nodes)])
+                [self.dem[n] + self.block_height_from_surface for _, n in enumerate(self.block_nodes)])
             
             # Manage blocks and neighboring nodes for diff wave
             if is_components:

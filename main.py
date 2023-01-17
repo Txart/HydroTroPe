@@ -80,10 +80,9 @@ file_params_channel = pd.read_excel(params_fn, engine='openpyxl', sheet_name='ch
 #%% Set up all the classes needed for the model
 
 channel_network = ChannelNetwork(
-    graph=graph, params_channel=file_params_channel, block_height_from_surface=0.0, block_coeff_k=2000.0,
-    y_ini_below_DEM=-0.0, Q_ini_value=0.0, channel_bottom_below_DEM=8.0,
-    y_BC_below_DEM=-0.0, # Dirichlet BC at the last (i.e., downstream) nodes of a channel network. It is only imposed if CWLHydroParameters.downsream_diri_BC is set to True. If it is False, Neumann BC are imposed.
-    Q_BC=0.0, channel_width=3.5, work_without_blocks=not blockOpt)
+    graph=graph,
+    params_channel=file_params_channel,
+    work_without_blocks=not blockOpt)
 
 peatland = Peatland(cn=channel_network, fn_pointers=fn_pointers)
 

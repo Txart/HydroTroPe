@@ -77,14 +77,9 @@ class AbstractChannelHydrology:
         # each one with the same params as the global one.
         return [ChannelNetwork(
                 graph=g_com,
-                block_height_from_surface=self.cn.block_height_from_surface,
-                block_coeff_k=self.cn.block_coeff_k,
-                y_ini_below_DEM=self.cn.y_ini_below_DEM,
-                Q_ini_value=self.cn.Q_ini_value,
-                channel_bottom_below_DEM=self.cn.channel_bottom_below_DEM,
-                y_BC_below_DEM=self.cn.y_BC_below_DEM,
-                Q_BC=self.cn.Q_BC,
-                channel_width=self.cn.channel_width,
+
+    params_channel=file_params_channel,
+                params_channel=self.cn.params_channel,
                 work_without_blocks=self.cn.work_without_blocks,
                 is_components=True # crucial bit to compute the diffusive wave approx.
                 ) for g_com in self.cn.component_graphs]
