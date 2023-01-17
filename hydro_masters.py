@@ -130,9 +130,6 @@ def set_hydrological_params(hydro, cwl_hydro, params_hydro, param_number):
     hydro.ph_params.s2 = float(params_hydro[params_hydro.number == param_number].s2)
     hydro.ph_params.t1 = float(params_hydro[params_hydro.number == param_number].t1)
     hydro.ph_params.t2 = float(params_hydro[params_hydro.number == param_number].t2)
-    cwl_hydro.cwl_params.porous_threshold_below_dem = float(params_hydro[params_hydro.number == param_number].porous_threshold)
-    cwl_hydro.cwl_params.n1 = float(params_hydro[params_hydro.number == param_number].n1)
-    cwl_hydro.cwl_params.n2 = float(params_hydro[params_hydro.number == param_number].n2)
     
     return None
 
