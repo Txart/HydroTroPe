@@ -73,9 +73,10 @@ sourcesink_df = read_sourcesink(filenames_df)
 
 #%% Read params
 params_fn = Path.joinpath(parent_directory, '2d_calibration_parameters.xlsx')
-file_params_hydro = pd.read_excel(params_fn, engine='openpyxl', sheet_name='hydro')
+file_params_php = pd.read_excel(params_fn, engine='openpyxl', sheet_name='peat_hydro_prop')
 file_params_general = pd.read_excel(params_fn, engine='openpyxl', sheet_name='general')
 file_params_channel = pd.read_excel(params_fn, engine='openpyxl', sheet_name='channel')
+file_params_peat = pd.read_excel(params_fn, engine='openpyxl', sheet_name='peat')
 
 #%% Set up all the classes needed for the model
 
@@ -88,18 +89,17 @@ peatland = Peatland(cn=channel_network,
                     fn_pointers=fn_pointers)
 
 peat_hydro_params = PeatlandHydroParameters(
-    dt=1/24,  # dt in days
-    dx=50,  # dx in meters, only used if structured mesh
-    max_sweeps=1000, # max number of iterations for convergence of FiPy's numerical solution
-    fipy_desired_residual=1e-5, # Residual for FiPy
-    s1=0.0, s2=0.0, t1=0, t2=0, # Peat hydraulic properties. Storage coefficient and transmissivity.
-    use_several_weather_stations=True # If False, sets single P - ET everywhere. If true, uses different weather stations' position.
-    )
+                            params_peat=file_params_peat,
+                            dt=1/24,  # dt in days
+                            dx=50,  # dx in meters, only used if structured mesh
+                            use_several_weather_stations=True # If False, sets single P - ET everywhere. If true, uses different weather stations' position.
+                            )
 
 # Set up cwl computation
-cwl_params = CWLHydroParameters(dt=3600,  # s 
-                                dx=100,  # m
+cwl_params = CWLHydroParameters(
                                 params_channel=file_params_channel,
+                                dt=3600,  # s 
+                                dx=100,  # m
                                 downstream_diri_BC=False 
                                 )
 
@@ -119,8 +119,6 @@ hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content
                                   peatland=peatland, peat_hydro_params=peat_hydro_params,
                                   parameterization=parameterization,
                                   channel_network=channel_network, cwl_params=cwl_params)
-
-
 
 # %% Params
 hydro.ph_params.dt = 1/24  # dt in days
@@ -152,7 +150,7 @@ if platform.system() == 'Linux':
         raise NotImplementedError('Multiprocessing not implemented fully')
         hydro.verbose = True
         param_numbers = [1]
-        multiprocessing_arguments = [(param_number, file_params_hydro, hydro, cwl_hydro, net_daily_source,
+        multiprocessing_arguments = [(param_number, file_params_php, hydro, cwl_hydro, net_daily_source,
                                       parent_directory) for param_number in param_numbers]
         with mp.Pool(processes=N_CPU) as pool:
             pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
@@ -160,7 +158,7 @@ if platform.system() == 'Linux':
     elif N_PARAMS == 1:
         hydro.verbose = True
         param_numbers = [1] 
-        # arguments = [(param_number, file_params_hydro, hydro, cwl_hydro, net_daily_source,
+        # arguments = [(param_number, file_params_php, hydro, cwl_hydro, net_daily_source,
         #               parent_directory) for param_number in param_numbers]
         # for args in arguments:
         #     produce_family_of_rasters(*args)
@@ -171,7 +169,7 @@ if platform.system() == 'Linux':
                 name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
 
             hydro_masters.set_hydrological_params(hydro,
-                                                  params_hydro=file_params_hydro,
+                                                  params_hydro=file_params_php,
                                                   param_number=param_number)
 
             hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
@@ -190,7 +188,7 @@ if platform.system() == 'Windows':
             name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
 
         hydro_masters.set_hydrological_params(hydro,
-                                                params_hydro=file_params_hydro,
+                                                params_hydro=file_params_php,
                                                 param_number=param_number)
 
         hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
