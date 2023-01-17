@@ -73,13 +73,14 @@ sourcesink_df = read_sourcesink(filenames_df)
 
 #%% Read params
 params_fn = Path.joinpath(parent_directory, '2d_calibration_parameters.xlsx')
-params_hydro = pd.read_excel(params_fn, engine='openpyxl', sheet_name='hydro')
-params_general = pd.read_excel(params_fn, engine='openpyxl', sheet_name='general')
+file_params_hydro = pd.read_excel(params_fn, engine='openpyxl', sheet_name='hydro')
+file_params_general = pd.read_excel(params_fn, engine='openpyxl', sheet_name='general')
+file_params_channel = pd.read_excel(params_fn, engine='openpyxl', sheet_name='channel')
 
 #%% Set up all the classes needed for the model
 
 channel_network = ChannelNetwork(
-    graph=graph, block_height_from_surface=0.0, block_coeff_k=2000.0,
+    graph=graph, params_channel=file_params_channel, block_height_from_surface=0.0, block_coeff_k=2000.0,
     y_ini_below_DEM=-0.0, Q_ini_value=0.0, channel_bottom_below_DEM=8.0,
     y_BC_below_DEM=-0.0, # Dirichlet BC at the last (i.e., downstream) nodes of a channel network. It is only imposed if CWLHydroParameters.downsream_diri_BC is set to True. If it is False, Neumann BC are imposed.
     Q_BC=0.0, channel_width=3.5, work_without_blocks=not blockOpt)
@@ -129,7 +130,7 @@ hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content
 # %% Params
 hydro.ph_params.dt = 1/24  # dt in days
 hydro.cn_params.dt = 3600  # dt in seconds
-NDAYS = int(params_general['NDAYS'])
+NDAYS = int(file_params_general['NDAYS'])
 
 N_PARAMS = N_CPU
 
@@ -156,7 +157,7 @@ if platform.system() == 'Linux':
         raise NotImplementedError('Multiprocessing not implemented fully')
         hydro.verbose = True
         param_numbers = [1]
-        multiprocessing_arguments = [(param_number, params_hydro, hydro, cwl_hydro, net_daily_source,
+        multiprocessing_arguments = [(param_number, file_params_hydro, hydro, cwl_hydro, net_daily_source,
                                       parent_directory) for param_number in param_numbers]
         with mp.Pool(processes=N_CPU) as pool:
             pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
@@ -164,7 +165,7 @@ if platform.system() == 'Linux':
     elif N_PARAMS == 1:
         hydro.verbose = True
         param_numbers = [1] 
-        # arguments = [(param_number, params_hydro, hydro, cwl_hydro, net_daily_source,
+        # arguments = [(param_number, file_params_hydro, hydro, cwl_hydro, net_daily_source,
         #               parent_directory) for param_number in param_numbers]
         # for args in arguments:
         #     produce_family_of_rasters(*args)
@@ -174,7 +175,7 @@ if platform.system() == 'Linux':
             hydro.zeta = fp.CellVariable(
                 name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
 
-            hydro_masters.set_hydrological_params(hydro, cwl_hydro, params_hydro, param_number)
+            hydro_masters.set_hydrological_params(hydro, cwl_hydro, file_params_hydro, param_number)
 
             hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
                     parent_directory)
@@ -191,7 +192,7 @@ if platform.system() == 'Windows':
         hydro.zeta = fp.CellVariable(
             name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
 
-        hydro_masters.set_hydrological_params(hydro, cwl_hydro, params_hydro, param_number)
+        hydro_masters.set_hydrological_params(hydro, cwl_hydro, file_params_hydro, param_number)
 
         hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
                   parent_directory)

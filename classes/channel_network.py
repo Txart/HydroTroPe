@@ -6,10 +6,9 @@ from pathlib import Path
 import cwl_utilities
 
 class ChannelNetwork:
-    def __init__(self, graph, block_height_from_surface,
-                 block_coeff_k, y_ini_below_DEM, y_BC_below_DEM,
-                 Q_ini_value, Q_BC, channel_width,
-                 channel_bottom_below_DEM,
+    def __init__(self,
+                 graph,
+                 params_channel,
                  work_without_blocks,
                  is_components=False) -> None:
         """This class has 2 purposes:
@@ -31,18 +30,21 @@ class ChannelNetwork:
                                                     It sets some attributes needed to run the diffusive wave
                                                     approximation which are expensive to compute for the whole netwok.
         """
-        # Unpack
+        # Unpack. Read params from file.
         self.graph = graph
-        self.block_height_from_surface = block_height_from_surface
-        self.block_coeff_k = block_coeff_k
-        self.y_ini_below_DEM = y_ini_below_DEM  # m below DEM
-        self.y_BC_below_DEM = y_BC_below_DEM  # downstream BC (m below DEM)
-        self.Q_ini_value = Q_ini_value
-        self.Q_BC = Q_BC  # upstream BC in [units of dx]/ [units of dt]
-        self.channel_width = channel_width  # (rectangular) canal width in m
-        # m below DEM, positive downwards
-        self.channel_bottom_below_DEM = channel_bottom_below_DEM
-        self.work_without_blocks = work_without_blocks
+
+        # Dirichlet BC at the last (i.e., downstream) nodes of a channel network. It is only imposed if CWLHydroParameters.downsream_diri_BC is set to True. If it is False, Neumann BC are imposed.
+        self.y_BC_below_DEM = float(params_channel['y_BC_below_DEM'])
+        self.block_height_from_surface = float(params_channel['block_height_from_surface'])
+        self.block_coeff_k = float(params_channel['block_height_from_surface'])
+        self.y_ini_below_DEM= float(params_channel['y_ini_below_DEM'])
+        self.y_BC_below_DEM = float(params_channel['y_BC_below_DEM'])
+        self.Q_ini_value = float(params_channel['Q_ini_value'])
+        self.Q_BC = float(params_channel['Q_BC'])
+        self.channel_width = float(params_channel['channel_width'])
+        self.channel_bottom_below_DEM = float(params_channel['channel_bottom_below_DEM']) # m below DEM, positive downwards
+        self.work_without_blocks = float(params_channel['work_without_blocks'])
+
 
         # transpose is needed because of difference with NetworkX
         # canal network adjacency matrix
