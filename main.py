@@ -129,7 +129,7 @@ N_PARAMS = N_CPU
 # Read from pickle
 initial_zeta_origin = 'pickle' # pickle, tiff or constant
 
-def set_initial_zeta(origin:str, filenames_df):
+def get_initial_zeta(origin:str, filenames_df):
     if origin == 'pickle':
         initial_zeta_pickle_fn = Path(
             filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
@@ -149,7 +149,7 @@ def set_initial_zeta(origin:str, filenames_df):
     else:
         raise(NameError)
 
-set_initial_zeta(origin=initial_zeta_origin, filenames_df=filenames_df)
+initial_zeta = get_initial_zeta(origin=initial_zeta_origin, filenames_df=filenames_df)
 
 #%% Run multiprocessing csc
 if platform.system() == 'Linux':
