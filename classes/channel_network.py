@@ -33,7 +33,7 @@ class ChannelNetwork:
         # Unpack
         self.graph = graph
         self.work_without_blocks = work_without_blocks
-        self.params_channel = params_channeli
+        self.params_channel = params_channel
 
         # Read params from file.
         # Dirichlet BC at the last (i.e., downstream) nodes of a channel network. It is only imposed if CWLHydroParameters.downsream_diri_BC is set to True. If it is False, Neumann BC are imposed.

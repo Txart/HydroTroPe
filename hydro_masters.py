@@ -125,7 +125,7 @@ def write_output_zeta_raster(zeta, hydro, full_folder_path, day):
 
     return None
 
-def set_hydrological_params(hydro, cwl_hydro, file_params_hydro, param_number):
+def set_hydrological_params(hydro, cwl_hydro, params_hydro, param_number):
     hydro.ph_params.s1 = float(params_hydro[params_hydro.number == param_number].s1)
     hydro.ph_params.s2 = float(params_hydro[params_hydro.number == param_number].s2)
     hydro.ph_params.t1 = float(params_hydro[params_hydro.number == param_number].t1)

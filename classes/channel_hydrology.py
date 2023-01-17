@@ -77,8 +77,6 @@ class AbstractChannelHydrology:
         # each one with the same params as the global one.
         return [ChannelNetwork(
                 graph=g_com,
-
-    params_channel=file_params_channel,
                 params_channel=self.cn.params_channel,
                 work_without_blocks=self.cn.work_without_blocks,
                 is_components=True # crucial bit to compute the diffusive wave approx.
