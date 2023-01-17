@@ -1,20 +1,17 @@
 #%%
 from classes.parameterizations import ExponentialBelowOneAboveStorageExpoTrans
-from classes.peatland_hydrology import PeatlandHydroParameters, set_up_peatland_hydrology
+from classes.peatland_hydrology import set_up_peatland_hydrology
+from classes.peat_hydro_params import PeatlandHydroParameters
 from classes.peatland import Peatland
 from classes.channel_hydrology import set_up_channel_hydrology, CWLHydroParameters
 from classes.channel_network import ChannelNetwork
-import preprocess_data
+
 import argparse
 import multiprocessing as mp
-from scipy.spatial import distance
-import sys
 import pandas as pd
 import platform
 import pickle
 import fipy as fp
-import copy
-import networkx as nx
 from pathlib import Path
 import numpy as np
 
@@ -114,7 +111,8 @@ parameterization = ExponentialBelowOneAboveStorageExpoTrans(peat_hydro_params)
 
 hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content == 'mesh'].Path.values[0]),
                                   model_coupling='darcy',
-                                  use_scaled_pde=False, zeta_diri_bc=-0.2,
+                                  use_scaled_pde=False,
+                                  zeta_diri_bc=float(file_params_peat['zeta_diri_BC']),
                                   force_ponding_storage_equal_one=False,
                                   peatland=peatland, peat_hydro_params=peat_hydro_params,
                                   parameterization=parameterization,
