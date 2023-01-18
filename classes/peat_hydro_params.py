@@ -1,12 +1,12 @@
 class PeatlandHydroParameters:
     def __init__(self,
                  params_peat,
-                 dt, dx,
                  use_several_weather_stations) -> None:
-        self.dt = dt
-        self.dx = dx
+        self.dx = float(params_peat['dx']) # only used if rectangular grid
         self.max_sweeps = int(params_peat['max_sweeps']) # max number of iterations for convergence of FiPy's numerical solution
         self.fipy_desired_residual = float(params_peat['fipy_desired_residual'])
+        # self.zeta_diri_bc = float(file_params_peat['zeta_diri_BC'])
+        
 
         # parameters for S and T functions. These must be set from code.
         self.s1 = None

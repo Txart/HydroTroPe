@@ -11,11 +11,10 @@ import utilities
 
 #%%
 class CWLHydroParameters:
-    def __init__(self, dt, dx, params_channel, 
+    def __init__(self, params_channel, 
                  downstream_diri_BC) -> None:
         self.g = 9.8  # m/s², Acceleration of gravity
-        self.dt = dt  # s, timestep
-        self.dx = dx  # m, delta x from finite dif.
+        self.dx = float(params_channel['dx']  # m, delta x from finite dif.
 
         # Parameters for the function describing the n_manning channel network friction coefficient.
         self.porous_threshold_below_dem = float(params_channel['porous_threshold']) # position where n_manning = max, in metres from surface

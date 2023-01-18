@@ -80,16 +80,12 @@ peatland = Peatland(cn=channel_network,
 
 peat_hydro_params = PeatlandHydroParameters(
                             params_peat=file_params_peat,
-                            dt=1/24,  # dt in days
-                            dx=50,  # dx in meters, only used if structured mesh
                             use_several_weather_stations=True # If False, sets single P - ET everywhere. If true, uses different weather stations' position.
                             )
 
 # Set up cwl computation
 cwl_params = CWLHydroParameters(
                                 params_channel=file_params_channel,
-                                dt=3600,  # s 
-                                dx=100,  # m
                                 downstream_diri_BC=False 
                                 )
 
@@ -110,9 +106,6 @@ hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content
                                   channel_network=channel_network, cwl_params=cwl_params)
 
 #%% Params
-hydro.ph_params.dt = 1/24  # dt in days
-hydro.cn_params.dt = 3600  # dt in seconds
-NDAYS = int(file_params_general['NDAYS'])
 
 N_PARAMS = N_CPU
 
@@ -146,5 +139,5 @@ elif N_PARAMS == 1:
                                               params_hydro=file_params_php,
                                               param_number=param_number)
 
-        hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
+        hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, file_params_general, sourcesink_df,
                 output_folder)

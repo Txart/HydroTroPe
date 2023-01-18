@@ -131,24 +131,27 @@ def set_hydrological_params(hydro, params_hydro, param_number):
     return None
 
 
-def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
+def produce_family_of_rasters(param_number, hydro, cwl_hydro, general_params,
                               net_daily_source, output_directory):
     # Outputs will go here
     out_rasters_folder_name = f"params_number_{param_number}"
     full_folder_path = Path.joinpath(output_directory, out_rasters_folder_name)
 
+    ndays = int(file_params_general['NDAYS'])
+    normal_timestep = int(file_params_general['normal_timestep'])  
+    smaller_timestep= int(file_params_general['shorter_timestep'])  
+
     day = 0
     needs_smaller_timestep = False
-    NORMAL_TIMESTEP = 24  # Hourly
-    SMALLER_TIMESTEP = 100
 
-    while day < N_DAYS:
+    while day < ndays:
         print(f'\n computing day {day}')
 
         if needs_smaller_timestep:
-            internal_timesteps = SMALLER_TIMESTEP
+            internal_timesteps = smaller_timestep
+
         else:
-            internal_timesteps = NORMAL_TIMESTEP
+            internal_timesteps = normal_timestep
 
         hydro_test = copy.deepcopy(hydro)
         cwl_hydro_test = copy.deepcopy(cwl_hydro)
@@ -158,13 +161,13 @@ def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
                 hydro_test, cwl_hydro_test, net_daily_source, internal_timesteps, day)
 
         except Exception as e:
-            if internal_timesteps == NORMAL_TIMESTEP:
+            if internal_timesteps == normal_timestep:
                 print(f'Exception in computation of param number {param_number} at day {day}: ', e,
                       ' I will retry with a smaller timestep')
                 needs_smaller_timestep = True
                 continue
 
-            elif internal_timesteps == SMALLER_TIMESTEP:
+            elif internal_timesteps == smaller_timestep:
                 print(
                     f"Another exception caught with smaller timestep: {e}. ABORTING")
                 return 0
