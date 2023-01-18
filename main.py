@@ -98,8 +98,6 @@ cwl_hydro = set_up_channel_hydrology(model_type='diff-wave-implicit-inexact',
                                      cn=channel_network)
 
 # If you change this, change also other occurrences below!!
-# parameterization = ExponentialBelowOneAboveStorageWithDepth(peat_hydro_params)
-# parameterization = ExponentialBelowOneAboveStorage(peat_hydro_params)
 parameterization = ExponentialBelowOneAboveStorageExpoTrans(peat_hydro_params)
 
 hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content == 'mesh'].Path.values[0]),
