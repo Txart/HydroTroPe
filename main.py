@@ -122,7 +122,6 @@ N_PARAMS = N_CPU
 # Read from pickle
 initial_zeta_origin = 'pickle' # pickle, tiff or constant
 
-
 initial_zeta = utilities.get_initial_zeta(origin=initial_zeta_origin, filenames_df=filenames_df)
 
 #%% Run hydro

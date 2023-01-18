@@ -24,7 +24,7 @@ def _is_same_weather_station_names_in_sourcesink_and_coords(fn_pointers:Path)->b
 
 def simulate_one_timestep_simple_two_step(hydro, cwl_hydro):
     # Alternative to simulate_one_timestep that only uses 1 fipy solution per timestep
-    zeta_before = hydro.zeta
+
     # Simulate WTD
     hydro.theta = hydro.create_theta_from_zeta(hydro.zeta)
 
@@ -105,14 +105,11 @@ def run_daily_computations(hydro, cwl_hydro, net_daily_source, internal_timestep
     # Add pan ET  
     hydro.sourcesink = hydro.sourcesink - \
             hydro.compute_pan_ET_from_ponding_water(hydro.zeta)
-    zeta_t0 = hydro.zeta.value
 
     solution_function = simulate_one_timestep_simple_two_step
 
-    for hour in tqdm(range(internal_timesteps)):
+    for _ in tqdm(range(internal_timesteps)):
         hydro, cwl_hydro = solution_function(hydro, cwl_hydro)
-
-    zeta_t1 = hydro.zeta.value
 
     return hydro, cwl_hydro
 
@@ -137,10 +134,6 @@ def set_hydrological_params(hydro, params_hydro, param_number):
 def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
                               net_daily_source, output_directory):
 
-    # hydro.parameterization = ExponentialBelowOneAboveStorage(
-    #     hydro.ph_params)
-    hydro.parameterization = ExponentialBelowOneAboveStorageExpoTrans(hydro.ph_params)
-     
     # Outputs will go here
     out_rasters_folder_name = f"params_number_{param_number}"
     full_folder_path = Path.joinpath(output_directory, out_rasters_folder_name)
@@ -153,10 +146,10 @@ def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
     while day < N_DAYS:
         print(f'\n computing day {day}')
 
-        if not needs_smaller_timestep:
-            internal_timesteps = NORMAL_TIMESTEP
-        elif needs_smaller_timestep:
+        if needs_smaller_timestep:
             internal_timesteps = SMALLER_TIMESTEP
+        else:
+            internal_timesteps = NORMAL_TIMESTEP
 
         hydro_test = copy.deepcopy(hydro)
         cwl_hydro_test = copy.deepcopy(cwl_hydro)
@@ -188,7 +181,7 @@ def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
             # write zeta to file
             if hydro.cn.work_without_blocks:
                 foldername = 'no_blocks'
-            elif not hydro.cn.work_without_blocks:
+            else:
                 foldername = 'yes_blocks'
 
             # if weather_stations, then the folder is yes_blocks by default
