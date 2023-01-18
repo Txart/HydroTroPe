@@ -22,6 +22,15 @@ import preprocess_data
 
 # %%
 
+def read_graph(filenames_df):
+    graph_fn = Path(filenames_df[filenames_df.Content ==
+                'channel_network_graph_pickle'].Path.values[0])
+    return pickle.load(open((graph_fn), "rb"))
+
+def read_sourcesink(filenames_df):
+    fn_sourcesink = Path(filenames_df[filenames_df.Content == 'sourcesink'].Path.values[0])
+    return pd.read_excel(fn_sourcesink, engine='openpyxl')
+
 def is_output_folder(output_folder:Path)->None:
     if not output_folder.is_dir():
         raise ValueError('The output folder of your choice does not exist')

@@ -57,17 +57,9 @@ utilities.is_output_folder(output_folder)
 if not hydro_masters._is_same_weather_station_names_in_sourcesink_and_coords(fn_pointers):
     raise ValueError('Weather station names in the weather station coords file and the sourcesink file must be equal. ABORTING.')
 
-def read_graph(filenames_df):
-    graph_fn = Path(filenames_df[filenames_df.Content ==
-                'channel_network_graph_pickle'].Path.values[0])
-    return pickle.load(open((graph_fn), "rb"))
-
-def read_sourcesink(filenames_df):
-    fn_sourcesink = Path(filenames_df[filenames_df.Content == 'sourcesink'].Path.values[0])
-    return pd.read_excel(fn_sourcesink, engine='openpyxl')
     
-graph = read_graph(filenames_df)
-sourcesink_df = read_sourcesink(filenames_df)
+graph = utilities.read_graph(filenames_df)
+sourcesink_df = utilities.read_sourcesink(filenames_df)
 
 #%% Read params
 params_fn = Path.joinpath(parent_directory, 'parameters.xlsx')
@@ -119,7 +111,7 @@ hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content
                                   parameterization=parameterization,
                                   channel_network=channel_network, cwl_params=cwl_params)
 
-# %% Params
+#%% Params
 hydro.ph_params.dt = 1/24  # dt in days
 hydro.cn_params.dt = 3600  # dt in seconds
 NDAYS = int(file_params_general['NDAYS'])
@@ -153,44 +145,19 @@ def get_initial_zeta(origin:str, filenames_df):
 initial_zeta = get_initial_zeta(origin=initial_zeta_origin, filenames_df=filenames_df)
 
 #%% Run hydro
-if platform.system() == 'Linux':
-
-    if N_PARAMS > 1:
-        # It only needs small adjustsments, see the 1 parameter case and extend
-        raise NotImplementedError('Multiprocessing not implemented fully')
-        hydro.verbose = True
-        param_numbers = [1]
-        multiprocessing_arguments = [(param_number, file_params_php, hydro, cwl_hydro, net_daily_source,
-                                      output_folder) for param_number in param_numbers]
-        with mp.Pool(processes=N_CPU) as pool:
-            pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
-
-    elif N_PARAMS == 1:
-        hydro.verbose = True
-        param_numbers = [1] 
-        # arguments = [(param_number, file_params_php, hydro, cwl_hydro, net_daily_source,
-        #               output_folder) for param_number in param_numbers]
-        # for args in arguments:
-        #     produce_family_of_rasters(*args)
-
-        for param_number in param_numbers:
-            # Set initial zeta
-            hydro.zeta = fp.CellVariable(
-                name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
-
-            hydro_masters.set_hydrological_params(hydro,
-                                                  params_hydro=file_params_php,
-                                                  param_number=param_number)
-
-            hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
-                    output_folder)
-
-
-# %% Run Windows
-if platform.system() == 'Windows':
+if N_PARAMS > 1:
+    # It only needs small adjustsments, see the 1 parameter case and extend
+    raise NotImplementedError('Multiprocessing not implemented fully')
     hydro.verbose = True
-    N_PARAMS = 1
     param_numbers = [1]
+    multiprocessing_arguments = [(param_number, file_params_php, hydro, cwl_hydro, net_daily_source,
+                                  output_folder) for param_number in param_numbers]
+    with mp.Pool(processes=N_CPU) as pool:
+        pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
+
+elif N_PARAMS == 1:
+    hydro.verbose = True
+    param_numbers = [1] 
 
     for param_number in param_numbers:
         # Set initial zeta
@@ -198,10 +165,8 @@ if platform.system() == 'Windows':
             name='zeta', mesh=hydro.mesh, value=initial_zeta, hasOld=True)
 
         hydro_masters.set_hydrological_params(hydro,
-                                                params_hydro=file_params_php,
-                                                param_number=param_number)
+                                              params_hydro=file_params_php,
+                                              param_number=param_number)
 
         hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
-                  output_folder)
-
-# %%
+                output_folder)
