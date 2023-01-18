@@ -135,14 +135,13 @@ def set_hydrological_params(hydro, params_hydro, param_number):
 
 
 def produce_family_of_rasters(param_number, hydro, cwl_hydro, N_DAYS,
-                              net_daily_source, parent_directory):
+                              net_daily_source, output_directory):
 
     # hydro.parameterization = ExponentialBelowOneAboveStorage(
     #     hydro.ph_params)
     hydro.parameterization = ExponentialBelowOneAboveStorageExpoTrans(hydro.ph_params)
      
     # Outputs will go here
-    output_directory = Path.joinpath(parent_directory, 'output')
     out_rasters_folder_name = f"params_number_{param_number}"
     full_folder_path = Path.joinpath(output_directory, out_rasters_folder_name)
 

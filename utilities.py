@@ -16,11 +16,17 @@ from scipy.spatial import cKDTree
 import pandas as pd
 import itertools
 from operator import itemgetter
+from pathlib import Path
 
 import preprocess_data
 
 # %%
 
+def is_output_folder(output_folder:Path)->None:
+    if not output_folder.is_dir():
+        raise ValueError('The output folder of your choice does not exist')
+    else:
+        return None
 
 def get_already_built_block_positions(blocks_arr, labelled_canals):
     labelled_blocks = blocks_arr * labelled_canals

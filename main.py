@@ -41,16 +41,17 @@ parser.set_defaults(blockOpt=True)
 blockOpt = args.blockOpt
 N_CPU = args.ncpu
 
-parent_directory = Path("~/Programming/github/HydroTroPe")
-data_parent_folder = Path("~/Dropbox/PhD/Computation/ForestCarbon/2022 Kalimantan customer work/0. Raw Data")
+#%% Folders and data
+parent_directory = Path()
+# data_parent_folder = Path("~/Dropbox/PhD/Computation/ForestCarbon/2022 Kalimantan customer work/0. Raw Data")
 fn_pointers = parent_directory.joinpath(r'file_pointers.xlsx')
 
-if N_CPU != 1:
-    raise ValueError(
-        'Multiprocessing not impletmeented in Windows. n_cpus in must be equal to 1')
-
-# %% Prepare data
 filenames_df = pd.read_excel(fn_pointers, header=2, dtype=str, engine='openpyxl')
+
+# Check  output folder exists
+output_folder = Path(filenames_df[filenames_df.Content ==
+            'output_directory'].Path.values[0])
+utilities.is_output_folder(output_folder)
 
 # check that weather station locations and sourcesink data have the same names
 if not hydro_masters._is_same_weather_station_names_in_sourcesink_and_coords(fn_pointers):
@@ -69,7 +70,7 @@ graph = read_graph(filenames_df)
 sourcesink_df = read_sourcesink(filenames_df)
 
 #%% Read params
-params_fn = Path.joinpath(parent_directory, '2d_calibration_parameters.xlsx')
+params_fn = Path.joinpath(parent_directory, 'parameters.xlsx')
 file_params_php = pd.read_excel(params_fn, engine='openpyxl', sheet_name='peat_hydro_prop')
 file_params_general = pd.read_excel(params_fn, engine='openpyxl', sheet_name='general')
 file_params_channel = pd.read_excel(params_fn, engine='openpyxl', sheet_name='channel')
@@ -160,7 +161,7 @@ if platform.system() == 'Linux':
         hydro.verbose = True
         param_numbers = [1]
         multiprocessing_arguments = [(param_number, file_params_php, hydro, cwl_hydro, net_daily_source,
-                                      parent_directory) for param_number in param_numbers]
+                                      output_folder) for param_number in param_numbers]
         with mp.Pool(processes=N_CPU) as pool:
             pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
 
@@ -168,7 +169,7 @@ if platform.system() == 'Linux':
         hydro.verbose = True
         param_numbers = [1] 
         # arguments = [(param_number, file_params_php, hydro, cwl_hydro, net_daily_source,
-        #               parent_directory) for param_number in param_numbers]
+        #               output_folder) for param_number in param_numbers]
         # for args in arguments:
         #     produce_family_of_rasters(*args)
 
@@ -182,7 +183,7 @@ if platform.system() == 'Linux':
                                                   param_number=param_number)
 
             hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
-                    parent_directory)
+                    output_folder)
 
 
 # %% Run Windows
@@ -201,6 +202,6 @@ if platform.system() == 'Windows':
                                                 param_number=param_number)
 
         hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, NDAYS, sourcesink_df,
-                  parent_directory)
+                  output_folder)
 
 # %%
