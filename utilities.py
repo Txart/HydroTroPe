@@ -37,6 +37,26 @@ def is_output_folder(output_folder:Path)->None:
     else:
         return None
 
+def get_initial_zeta(origin:str, filenames_df):
+    if origin == 'pickle':
+        initial_zeta_pickle_fn = Path(
+            filenames_df[filenames_df.Content == 'initial_zeta_pickle'].Path.values[0])
+        return pickle.load(open(initial_zeta_pickle_fn, 'rb'))
+
+    elif origin == 'tiff':
+        initial_zeta_fn = "enter_filename.tif"
+        mesh_centroids_coords = np.column_stack(hydro.mesh.cellCenters.value)
+        initial_zeta = utilities.sample_raster_from_coords(
+                raster_filename=initial_zeta_fn,
+                coords=mesh_centroids_coords)
+        return np.nan_to_num(initial_zeta, -0.2) # if mesh larger than raster, fill with value
+
+    elif origin == 'constant':
+        return -0.2
+
+    else:
+        raise(NameError)
+    
 def get_already_built_block_positions(blocks_arr, labelled_canals):
     labelled_blocks = blocks_arr * labelled_canals
     labelled_blocks = labelled_blocks.astype(dtype=int)
