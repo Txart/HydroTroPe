@@ -93,7 +93,7 @@ cwl_hydro = set_up_channel_hydrology(model_type='diff-wave-implicit-inexact',
                                      cwl_params=cwl_params,
                                      cn=channel_network)
 
-# If you change this, change also other occurrences below!!
+
 parameterization = ExponentialBelowOneAboveStorageExpoTrans(peat_hydro_params)
 
 hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content == 'mesh'].Path.values[0]),
@@ -105,10 +105,6 @@ hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content
                                   parameterization=parameterization,
                                   channel_network=channel_network, cwl_params=cwl_params)
 
-#%% Params
-
-N_PARAMS = N_CPU
-
 #%% Initial WTD
 # Read from pickle
 initial_zeta_origin = 'pickle' # pickle, tiff or constant
@@ -116,7 +112,7 @@ initial_zeta_origin = 'pickle' # pickle, tiff or constant
 initial_zeta = utilities.get_initial_zeta(origin=initial_zeta_origin, filenames_df=filenames_df)
 
 #%% Run hydro
-if N_PARAMS > 1:
+if N_CPU > 1:
     # It only needs small adjustsments, see the 1 parameter case and extend
     raise Warning('Multiprocessing is not 100 % tested.')
     hydro.verbose = True
@@ -126,7 +122,7 @@ if N_PARAMS > 1:
     with mp.Pool(processes=N_CPU) as pool:
         pool.starmap(produce_family_of_rasters, multiprocessing_arguments)
 
-elif N_PARAMS == 1:
+elif N_CPU == 1:
     hydro.verbose = True
     param_numbers = [1] 
 
@@ -138,6 +134,5 @@ elif N_PARAMS == 1:
         hydro_masters.set_hydrological_params(hydro,
                                               params_hydro=file_params_php,
                                               param_number=param_number)
-
         hydro_masters.produce_family_of_rasters(param_number, hydro, cwl_hydro, file_params_general, sourcesink_df,
                 output_folder)

@@ -25,6 +25,7 @@ def _is_same_weather_station_names_in_sourcesink_and_coords(fn_pointers:Path)->b
 def simulate_one_timestep_simple_two_step(hydro, cwl_hydro):
     # Alternative to simulate_one_timestep that only uses 1 fipy solution per timestep
 
+    
     # Simulate WTD
     hydro.theta = hydro.create_theta_from_zeta(hydro.zeta)
 
@@ -137,9 +138,9 @@ def produce_family_of_rasters(param_number, hydro, cwl_hydro, general_params,
     out_rasters_folder_name = f"params_number_{param_number}"
     full_folder_path = Path.joinpath(output_directory, out_rasters_folder_name)
 
-    ndays = int(file_params_general['NDAYS'])
-    normal_timestep = int(file_params_general['normal_timestep'])  
-    smaller_timestep= int(file_params_general['shorter_timestep'])  
+    ndays = int(general_params['NDAYS'])
+    normal_timestep = int(general_params['normal_timestep'])  
+    smaller_timestep= int(general_params['shorter_timestep'])  
 
     day = 0
     needs_smaller_timestep = False

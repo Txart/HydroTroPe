@@ -829,7 +829,6 @@ class RectangularMeshHydro(AbstractPeatlandHydro):
 
 
 def set_up_peatland_hydrology(mesh_fn,
-                              general_params,
                               model_coupling,
                               use_scaled_pde,
                               zeta_diri_bc,
@@ -863,7 +862,6 @@ def set_up_peatland_hydrology(mesh_fn,
                                     force_ponding_storage_equal_one=force_ponding_storage_equal_one)
     else:
         return GmshMeshHydro(mesh_fn=mesh_fn,
-                             general_params=general_params,
                              peatland=peatland,
                              peat_hydro_params=peat_hydro_params,
                              parameterization=parameterization,
