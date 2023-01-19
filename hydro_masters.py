@@ -41,7 +41,7 @@ def simulate_one_timestep_simple_two_step(hydro, cwl_hydro):
         zeta=hydro.cn.y - hydro.cn.dem, dem=hydro.cn.dem)
     theta_diff = theta_prediction_array - theta_previous_array
     q = cwl_hydro.predict_q_for_next_timestep(
-        theta_difference=theta_diff, seconds_per_timestep=hydro.cn_params.dt)
+        theta_difference=theta_diff, seconds_per_timestep=cwl_hydro.cwl_params.dt)
 
     # Add q to each component graph
     q_nodedict = hydro.cn.from_nparray_to_nodedict(q)
