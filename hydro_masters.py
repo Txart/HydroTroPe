@@ -124,10 +124,12 @@ def write_output_zeta_raster(zeta, hydro, full_folder_path, day):
     return None
 
 def set_hydrological_params(hydro, params_hydro, param_number):
-    hydro.ph_params.s1 = float(params_hydro[params_hydro.number == param_number].s1)
-    hydro.ph_params.s2 = float(params_hydro[params_hydro.number == param_number].s2)
-    hydro.ph_params.t1 = float(params_hydro[params_hydro.number == param_number].t1)
-    hydro.ph_params.t2 = float(params_hydro[params_hydro.number == param_number].t2)
+    s1 = float(params_hydro[params_hydro.number == param_number].s1)
+    s2 = float(params_hydro[params_hydro.number == param_number].s2)
+    t1 = float(params_hydro[params_hydro.number == param_number].t1)
+    t2 = float(params_hydro[params_hydro.number == param_number].t2)
+
+    hydro.parameterization.set_peat_hydraulic_properties(s1, s2, t1, t2)
     
     return None
 

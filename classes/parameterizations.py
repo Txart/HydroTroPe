@@ -6,14 +6,7 @@ from classes.peat_hydro_params import PeatlandHydroParameters
 
 
 class AbstractParameterization:
-    def __init__(self,
-                 ph_params: PeatlandHydroParameters) -> None:
-
-        self.s1 = ph_params.s1
-        self.s2 = ph_params.s2
-        self.t1 = ph_params.t1
-        self.t2 = ph_params.t2
-
+    def __init__(self) -> None:
         pass
 
     """
@@ -21,6 +14,14 @@ class AbstractParameterization:
     Here I define 3 functions that every subclass of this class
     should have.
     """
+
+    def set_peat_hydraulic_properties(self, s1, s2, t1, t2):
+        self.s1 = s1
+        self.s2 = s2
+        self.t1 = t1
+        self.t2 = t2
+
+        return None
 
     def theta_from_zeta(self, zeta, dem):
         raise NotImplementedError

@@ -613,9 +613,9 @@ class GmshMeshHydro(AbstractPeatlandHydro):
     def set_theta_diriBC_from_zeta_value(self, zeta_diri_BC, theta_fipy):
         dem_face_values = self.dem.faceValue
         # Compute theta from zeta
-        theta_face_values = self.ph_params.s1/self.ph_params.s2 * \
-            (numerix.exp(self.ph_params.s2*zeta_diri_BC) -
-             numerix.exp(-self.ph_params.s2*dem_face_values))
+        theta_face_values = self.parameterization.s1/self.parameterization.s2 * \
+            (numerix.exp(self.parameterization.s2*zeta_diri_BC) -
+             numerix.exp(-self.parameterization.s2*dem_face_values))
         # constrain theta with those values
         theta_fipy.constrain(theta_face_values, self.mesh.exteriorFaces)
 
@@ -755,8 +755,8 @@ class RectangularMeshHydro(AbstractPeatlandHydro):
         mask = mask_part1 * mask_part2
 
         # compute diffusivity. Cell Variable
-        diff_coeff = (self.ph_params.t1*numerix.exp(-self.ph_params.t2*self.depth)/numerix.sqrt(2*self.ph_params.s2) *
-                      (numerix.exp(self.ph_params.t2*numerix.sqrt(2*theta/self.ph_params.s2)) - 1) / numerix.sqrt(theta))
+        diff_coeff = (self.parameterization.t1*numerix.exp(-self.parameterization.t2*self.depth)/numerix.sqrt(2*self.parameterization.s2) *
+                      (numerix.exp(self.parameterization.t2*numerix.sqrt(2*theta/self.parameterization.s2)) - 1) / numerix.sqrt(theta))
 
         # Apply mask
         # diff_coeff.faceValue is a FaceVariable

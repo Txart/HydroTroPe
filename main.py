@@ -93,8 +93,9 @@ cwl_hydro = set_up_channel_hydrology(model_type='diff-wave-implicit-inexact',
                                      cwl_params=cwl_params,
                                      cn=channel_network)
 
-
-parameterization = ExponentialBelowOneAboveStorageExpoTrans(peat_hydro_params)
+# Define parameterization of peat hydraulic properties.
+# The value of the peat hydr. prop. must be set through the setter function set_peat_hydraulic_properties
+parameterization = ExponentialBelowOneAboveStorageExpoTrans()
 
 hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content == 'mesh'].Path.values[0]),
                                   model_coupling='darcy',
