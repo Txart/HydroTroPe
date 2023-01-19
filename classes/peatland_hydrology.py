@@ -80,8 +80,6 @@ class AbstractPeatlandHydro:
         # print stuff
         self.verbose = False
 
-        self._set_boundary_conditions()
-
         pass
 
 
@@ -322,12 +320,13 @@ class GmshMeshHydro(AbstractPeatlandHydro):
                  cwl_params: CWLHydroParameters,
                  model_coupling='darcy',
                  use_scaled_pde=False,
-                 zeta_diri_bc=None,
+                 boundary_condition='neumann',
                  force_ponding_storage_equal_one=False) -> None:
         super().__init__(peatland, peat_hydro_params, parameterization,
                          channel_network, cwl_params,
-                         model_coupling=model_coupling, use_scaled_pde=use_scaled_pde,
-                         zeta_diri_bc=zeta_diri_bc,
+                         model_coupling=model_coupling,
+                         use_scaled_pde=use_scaled_pde,
+                         boundary_condition=boundary_condition,
                          force_ponding_storage_equal_one=force_ponding_storage_equal_one)
 
 
@@ -339,6 +338,8 @@ class GmshMeshHydro(AbstractPeatlandHydro):
         
         self.gdf_mesh_centers_corresponding_to_canals = self._get_geodataframe_mesh_centers_corresponding_to_canals()
         canal_mesh_cell_indices = list(self.gdf_mesh_centers_corresponding_to_canals.index)
+
+        self._set_boundary_conditions()
         
         # Geometrical quantities for cells and canals
         mean_cell_centroid_distance = self.mesh.scaledCellToCellDistances.mean()
