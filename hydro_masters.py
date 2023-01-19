@@ -95,6 +95,7 @@ def simulate_one_timestep_simple_two_step(hydro, cwl_hydro):
 
 def run_daily_computations(hydro, cwl_hydro, net_daily_source, internal_timesteps, day):
 
+    # Important: set dt in peat and channel hydrology classes from the chosen timesteps
     hydro.ph_params.dt = 1/internal_timesteps  # dt in days
     cwl_hydro.cwl_params.dt = 86400/internal_timesteps  # dt in seconds
 

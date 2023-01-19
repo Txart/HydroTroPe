@@ -34,7 +34,7 @@ class AbstractPeatlandHydro:
                  cwl_params: CWLHydroParameters,
                  model_coupling='darcy',
                  use_scaled_pde='False',
-                 zeta_diri_bc=None,
+                 boundary_condition='neumann',
                  force_ponding_storage_equal_one=False) -> None:
         """This class is abstract. Always create one of its subclasses.
 
@@ -51,7 +51,7 @@ class AbstractPeatlandHydro:
                 groundwater simulation step. Defaults to 'darcy'.
             use_scaled_pde (bool, optional): Run fipy hydrology with the scaled version of the pde. Might help in
                 some cases when numbers become too large. Default: False.
-            zeta_diri_bc (None or float, optional): If None, no flux Neumann BCs are applied. If float, constant
+            boundary_condition (str, optional): BC in the peatland. 'neumann' or 'dirichlet'. Default: 'neumann' 
                 dirichlet BC is applied everywhere. Default: None.
             force_ponding_storage_equal_one (bool, optional): If True, forces S=1 for water above the surface. Careful:
                 if S becomes discontinuous, the hydro model probably won't converge. So, set to True only if S=1 at the surface.  
@@ -65,7 +65,7 @@ class AbstractPeatlandHydro:
         self.cn_params = cwl_params
         self.model_coupling = model_coupling
         self.use_scaled_pde = use_scaled_pde
-        self.zeta_diri_bc = zeta_diri_bc
+        self.boundary_condition = boundary_condition
         self.force_ponding_storage_equal_one = force_ponding_storage_equal_one
 
         self._check_model_coupling_choice()
@@ -80,7 +80,23 @@ class AbstractPeatlandHydro:
         # print stuff
         self.verbose = False
 
+        self._set_boundary_conditions()
+
         pass
+
+
+    def _set_boundary_conditions(self):
+        if self.boundary_condition == 'dirichlet':
+            self.zeta_diri_bc = self.ph_params.zeta_diri_bc
+
+        elif self.boundary_condition == 'neumann':
+            self.zeta_diri_bc = None
+
+        else:
+            raise ValueError('Boundary conditions in the peatland must be either "dirichlet" or "neumann"')
+
+        return None
+
 
     def zeta_from_theta(self, theta):
         # interface for function in one of the Parameterization classes
@@ -831,7 +847,7 @@ class RectangularMeshHydro(AbstractPeatlandHydro):
 def set_up_peatland_hydrology(mesh_fn,
                               model_coupling,
                               use_scaled_pde,
-                              zeta_diri_bc,
+                              boundary_condition,
                               force_ponding_storage_equal_one,
                               peatland: Peatland,
                               peat_hydro_params: PeatlandHydroParameters,
@@ -858,7 +874,7 @@ def set_up_peatland_hydrology(mesh_fn,
                                     cwl_params=cwl_params,
                                     model_coupling=model_coupling,
                                     use_scaled_pde=use_scaled_pde,
-                                    zeta_diri_bc=zeta_diri_bc,
+                                    boundary_condition=boundary_condition,
                                     force_ponding_storage_equal_one=force_ponding_storage_equal_one)
     else:
         return GmshMeshHydro(mesh_fn=mesh_fn,
@@ -869,5 +885,5 @@ def set_up_peatland_hydrology(mesh_fn,
                              cwl_params=cwl_params,
                              model_coupling=model_coupling,
                              use_scaled_pde=use_scaled_pde,
-                             zeta_diri_bc=zeta_diri_bc,
+                             boundary_condition=boundary_condition,
                              force_ponding_storage_equal_one=force_ponding_storage_equal_one)

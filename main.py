@@ -100,7 +100,7 @@ parameterization = ExponentialBelowOneAboveStorageExpoTrans()
 hydro = set_up_peatland_hydrology(mesh_fn=Path(filenames_df[filenames_df.Content == 'mesh'].Path.values[0]),
                                   model_coupling='darcy',
                                   use_scaled_pde=False,
-                                  zeta_diri_bc=float(file_params_peat['zeta_diri_BC']),
+                                  boundary_condition='dirichlet',
                                   force_ponding_storage_equal_one=False,
                                   peatland=peatland, peat_hydro_params=peat_hydro_params,
                                   parameterization=parameterization,
