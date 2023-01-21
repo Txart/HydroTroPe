@@ -86,7 +86,7 @@ peat_hydro_params = PeatlandHydroParameters(
 # Set up cwl computation
 cwl_params = CWLHydroParameters(
                                 params_channel=file_params_channel,
-                                downstream_diri_BC=False 
+                                downstream_diri_BC=False # If False, no-flux Neumann BC are applied at downstream nodes of the channel network. If True, Dirichlet BC with the value specified in the parameters file. No-flux Neumann are always applied to the upstream nodes of the channel network.
                                 )
 
 cwl_hydro = set_up_channel_hydrology(model_type='diff-wave-implicit-inexact',
