@@ -57,7 +57,7 @@
 
 ## Main folder
 - Python files
-    - main.py -- This is the interface to run the simulations
+    - main.py -- This is the interface to run the simulations. It requires the flag `--ncpu x`, where `x` is the number of cpus that the user wants to run the simulation with. `x=1` is the default and will run the computations serially. When `x>1`, the simulations for several peat hydraulic properties will be run in parallel. It also accepts the flags `--yes-blocks`or `no--blocks` (default) to run the channel hydrology model with or without blocks.
     - hydro_masters.py -- As important as main.py, this is a file to hide away from main.py the high-level hydrological functions.
     - find_initial_condition.py -- A script similar to main.py which was used to compute the initial WTD raster. It compares several modelled WTD rasters with the first day dipwell measurements, and it selects the best fit (MSE). See the manuscript for more details.
     - math_diff_wave.py and math_preissmann.py -- Programs containing the lowest level canal water level hydrology functions. (These should arguably be on a separate folder of their own, but I had some problems with python imports and I gave up.)

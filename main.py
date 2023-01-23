@@ -37,9 +37,11 @@ parser.add_argument('--ncpu', required=True,
 
 args = parser.parse_args()
 
-parser.set_defaults(blockOpt=True)
+parser.set_defaults(blockOpt=False)
 blockOpt = args.blockOpt
 N_CPU = args.ncpu
+
+print(blockOpt)
 
 #%% Folders and data
 parent_directory = Path()
