@@ -1,0 +1,16 @@
+  geopandas
+  pandas
+  numpy
+  scipy
+  xlrd
+  networkx
+  numba
+  matplotlib
+  rasterio
+  fipy
+  tqdm
+  openpyxl
+  ipython
+  ipykernel
+  gmsh
+  pytest
